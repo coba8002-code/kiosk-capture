@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E2439">
+<title>배리어프리 현장 수집</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header id="topbar">
+  <div class="tb-left">
+    <span id="step-label">STEP 1 / 4</span>
+    <strong id="step-title">기기 등록</strong>
+  </div>
+  <div class="tb-right"><span id="device-tag"></span></div>
+</header>
+
+<div id="progress"><div id="progress-fill"></div></div>
+
+<main id="view"></main>
+
+<footer id="bottombar"></footer>
+
+<div id="toast" hidden></div>
+
+<!-- 촬영 입력 — 네이티브 카메라를 연다. 화질이 getUserMedia 보다 낫다. -->
+<input type="file" id="capture-input" accept="image/*" capture="environment" hidden>
+<input type="file" id="capture-video" accept="video/*" capture="environment" hidden>
+<input type="file" id="capture-audio" accept="audio/*,video/*" capture hidden>
+<input type="file" id="capture-any" hidden>
+
+<!-- 가리기(마스킹) 오버레이 -->
+<div id="mask-overlay" hidden>
+  <div class="mask-head">
+    <button id="mask-cancel" class="ghost">취소</button>
+    <div class="mask-title">가릴 곳을 문질러 주세요</div>
+    <button id="mask-done" class="primary">완료</button>
+  </div>
+  <div class="mask-canvas-wrap"><canvas id="mask-canvas"></canvas></div>
+  <div class="mask-foot">
+    <div class="mask-hint">얼굴 · 카드번호 · 주민번호 · 화면의 개인정보</div>
+    <div class="mask-tools">
+      <button id="mask-undo" class="ghost">되돌리기</button>
+      <label class="brush">굵기<input type="range" id="mask-size" min="20" max="140" value="60"></label>
+      <button id="mask-skip" class="ghost">가릴 것 없음</button>
+    </div>
+  </div>
+</div>
+
+<script src="zip.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

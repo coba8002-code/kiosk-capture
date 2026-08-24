@@ -1,0 +1,901 @@
+{
+ "schema": "kfa.capture/1",
+ "protocol_version": "0.1.0",
+ "rules_version": "0.1.0",
+ "product_types": [
+  "중대형",
+  "소형"
+ ],
+ "scopes": [
+  "물건 투입",
+  "스캐너",
+  "지문 인식",
+  "배출물",
+  "보조 기능",
+  "음성 입력",
+  "개인정보 입력"
+ ],
+ "total_items": 40,
+ "items": [
+  {
+   "id": "1.a",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "1.b",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "1.c",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "C_MEASURE"
+  },
+  {
+   "id": "1.d",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "C_MEASURE"
+  },
+  {
+   "id": "1.e",
+   "scope": "물건 투입",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "1.f",
+   "scope": "물건 투입",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "B_OWNER"
+  },
+  {
+   "id": "1.g",
+   "scope": "스캐너",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "1.h",
+   "scope": "지문 인식",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "1.i",
+   "scope": "배출물",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "C_MEASURE"
+  },
+  {
+   "id": "2.a",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "2.b",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "3.a",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "3.b",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "B_OWNER"
+  },
+  {
+   "id": "3.c",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "3.d",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "3.e",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "3.f",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "B_OWNER"
+  },
+  {
+   "id": "3.g",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "C_MEASURE"
+  },
+  {
+   "id": "3.h",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "3.i",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "3.j",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "3.k",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "B_OWNER"
+  },
+  {
+   "id": "4.a",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "5.a",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "5.b",
+   "scope": "보조 기능",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "5.c",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "C_MEASURE"
+  },
+  {
+   "id": "6.a",
+   "scope": "음성 입력",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "7.a",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "7.b",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "7.c",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "7.d",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "7.e",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "7.f",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "7.g",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "7.h",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "8.a",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "9.a",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "C_MEASURE"
+  },
+  {
+   "id": "9.b",
+   "scope": "기본",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "C_MEASURE"
+  },
+  {
+   "id": "10.a",
+   "scope": "개인정보 입력",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  },
+  {
+   "id": "10.b",
+   "scope": "개인정보 입력",
+   "applies_to": [
+    "중대형",
+    "소형"
+   ],
+   "track": "A_AI"
+  }
+ ],
+ "sets": [
+  {
+   "id": "S1",
+   "name": "화면 캡처 시퀀스",
+   "medium": "photo",
+   "required": true,
+   "marker": true,
+   "marker_planes": [
+    "display"
+   ],
+   "constraints": {},
+   "feeds": [
+    "1.b",
+    "1.c",
+    "3.a",
+    "3.d",
+    "3.g",
+    "3.h",
+    "3.i",
+    "3.j",
+    "4.a",
+    "5.a",
+    "5.b",
+    "6.a",
+    "7.a",
+    "7.c",
+    "7.d",
+    "7.e",
+    "7.f",
+    "7.g",
+    "7.h",
+    "10.a"
+   ],
+   "note": null,
+   "shots": [
+    {
+     "id": "S1-01",
+     "label": "주요 플로우 전 단계 정면 촬영",
+     "note": "시작 화면부터 완료 화면까지 한 단계도 건너뛰지 않는다. 정면·무보정.",
+     "required_for": [],
+     "repeat": "플로우 단계 수만큼"
+    },
+    {
+     "id": "S1-02",
+     "label": "문자 확대 상태 화면",
+     "note": "확대 기능을 켠 뒤 동일 화면을 다시 촬영. 없으면 '기능 없음'으로 기록.",
+     "required_for": [
+      "3.h"
+     ],
+     "repeat": null
+    },
+    {
+     "id": "S1-03",
+     "label": "고대비 모드 화면",
+     "note": "고대비 모드가 있으면 해당 상태 촬영. 없으면 '기능 없음'으로 기록.",
+     "required_for": [
+      "3.j"
+     ],
+     "repeat": null
+    },
+    {
+     "id": "S1-04",
+     "label": "원본 무보정 사본",
+     "note": "명도 대비 계산은 화이트밸런스·감마 보정에 흔들린다. 앱은 보정 없는 원본(가능하면 RAW 또는 무보정 JPEG)을 함께 저장한다.",
+     "required_for": [
+      "3.i",
+      "3.j"
+     ],
+     "repeat": null
+    }
+   ]
+  },
+  {
+   "id": "S2",
+   "name": "조작 영상",
+   "medium": "video",
+   "required": true,
+   "marker": false,
+   "marker_planes": [],
+   "constraints": {
+    "fps_min": 30,
+    "note": "8.a 깜박임 3Hz 판정을 위해 30fps 이상. 24fps 이하는 판정 불가로 처리한다.",
+    "audio": "동시 녹음 필수"
+   },
+   "feeds": [
+    "1.a",
+    "1.f",
+    "1.i",
+    "2.a",
+    "2.b",
+    "3.c",
+    "3.d",
+    "3.e",
+    "5.a",
+    "5.b",
+    "6.a",
+    "7.a",
+    "7.b",
+    "7.d",
+    "8.a",
+    "10.a"
+   ],
+   "note": null,
+   "shots": [
+    {
+     "id": "S2-01",
+     "label": "시작부터 완료까지 1회 연속 조작",
+     "note": "중간 끊김 없이 한 번에. 음성 안내가 들리도록 주변 소음을 최소화한다.",
+     "required_for": [],
+     "repeat": null
+    },
+    {
+     "id": "S2-02",
+     "label": "제한 시간 대기 구간",
+     "note": "조작을 멈추고 타임아웃 경고가 뜰 때까지 기다린다. 이 컷이 없으면 2.b는 판정 불가.",
+     "required_for": [
+      "2.b"
+     ],
+     "repeat": null
+    },
+    {
+     "id": "S2-03",
+     "label": "자판·키패드 초점 이동",
+     "note": "키패드만으로 화면을 처음부터 끝까지 이동. 초점 표시가 보이도록.",
+     "required_for": [
+      "3.d",
+      "3.e"
+     ],
+     "repeat": null
+    },
+    {
+     "id": "S2-04",
+     "label": "취소·이전 단계 조작",
+     "note": "진행 중 취소를 눌러 초기 상태로 돌아가는 과정.",
+     "required_for": [
+      "7.a",
+      "7.d"
+     ],
+     "repeat": null
+    }
+   ]
+  },
+  {
+   "id": "S3",
+   "name": "기기 사진",
+   "medium": "photo",
+   "required": true,
+   "marker": true,
+   "marker_planes": [
+    "control_panel",
+    "dispenser",
+    "elevation"
+   ],
+   "constraints": {},
+   "feeds": [
+    "1.b",
+    "1.c",
+    "1.e",
+    "1.g",
+    "1.h",
+    "1.i",
+    "3.b",
+    "3.d",
+    "3.f",
+    "3.k",
+    "7.e",
+    "9.a",
+    "9.b"
+   ],
+   "note": null,
+   "shots": [
+    {
+     "id": "S3-01",
+     "label": "정면 전체 (마커 elevation 세움)",
+     "note": "바닥면이 프레임에 포함되도록. 마커 하단이 바닥에 닿아야 한다.",
+     "required_for": [
+      "9.a",
+      "9.b"
+     ],
+     "repeat": null
+    },
+    {
+     "id": "S3-02",
+     "label": "측면 전체 (마커 elevation 세움)",
+     "note": "작동부 높이 추정의 주 입력.",
+     "required_for": [
+      "9.a"
+     ],
+     "repeat": null
+    },
+    {
+     "id": "S3-03",
+     "label": "휠체어 눈높이 시점",
+     "note": "바닥에서 약 1,100mm 높이에서 화면을 바라본 컷. 화면 가림·반사 확인용.",
+     "required_for": [],
+     "repeat": null
+    },
+    {
+     "id": "S3-04",
+     "label": "조작부 접사 (마커 control_panel)",
+     "note": "키패드·물리 버튼을 정면에서. 버튼 경계와 간격이 선명해야 한다.",
+     "required_for": [
+      "1.b",
+      "1.c",
+      "3.f",
+      "3.k"
+     ],
+     "repeat": null
+    },
+    {
+     "id": "S3-05",
+     "label": "투입구·배출구 접사 (마커 dispenser)",
+     "note": null,
+     "required_for": [
+      "1.e",
+      "1.i"
+     ],
+     "repeat": null
+    },
+    {
+     "id": "S3-06",
+     "label": "하부 공간 (무릎·발 공간)",
+     "note": "하부 개방 구조인 경우. 마커를 바닥에 눕혀 깊이 기준을 만든다.",
+     "required_for": [],
+     "repeat": null
+    },
+    {
+     "id": "S3-07",
+     "label": "스캐너·지문 인식 장치 접사",
+     "note": "해당 장치가 있는 경우에만.",
+     "required_for": [
+      "1.g",
+      "1.h"
+     ],
+     "repeat": null
+    }
+   ]
+  },
+  {
+   "id": "S4",
+   "name": "주변 환경",
+   "medium": "photo",
+   "required": true,
+   "marker": true,
+   "marker_planes": [
+    "elevation"
+   ],
+   "constraints": {},
+   "feeds": [],
+   "note": "S4가 먹이는 항목은 별표5 40항목에 직접 대응되지 않는다. 설치 환경은 KS 11절 영역이며, 개선 처방(OPS)과 2차년도 확장을 위해 수집한다.",
+   "shots": [
+    {
+     "id": "S4-01",
+     "label": "기기 전면 활동공간 (마커 바닥 배치)",
+     "note": null,
+     "required_for": [],
+     "repeat": null
+    },
+    {
+     "id": "S4-02",
+     "label": "접근 경로 — 출입구에서 기기까지",
+     "note": null,
+     "required_for": [],
+     "repeat": null
+    },
+    {
+     "id": "S4-03",
+     "label": "바닥 단차·경사 근접",
+     "note": null,
+     "required_for": [],
+     "repeat": null
+    },
+    {
+     "id": "S4-04",
+     "label": "화면 눈부심·반사 상태",
+     "note": "촬영 시각과 조명 상태를 함께 기록한다. 시간대에 따라 결과가 달라진다.",
+     "required_for": [],
+     "repeat": null
+    }
+   ]
+  },
+  {
+   "id": "S5",
+   "name": "음성 녹음",
+   "medium": "audio",
+   "required": true,
+   "marker": false,
+   "marker_planes": [],
+   "constraints": {},
+   "feeds": [
+    "1.g",
+    "3.a",
+    "3.b",
+    "3.c",
+    "3.f",
+    "3.k",
+    "5.a",
+    "5.b",
+    "5.c",
+    "7.b",
+    "10.b"
+   ],
+   "note": null,
+   "shots": [
+    {
+     "id": "S5-01",
+     "label": "스피커 출력 — 최소 음량",
+     "note": null,
+     "required_for": [],
+     "repeat": null
+    },
+    {
+     "id": "S5-02",
+     "label": "스피커 출력 — 최대 음량",
+     "note": null,
+     "required_for": [],
+     "repeat": null
+    },
+    {
+     "id": "S5-03",
+     "label": "개인청취장치(이어폰) 연결 상태",
+     "note": "연결 즉시 스피커가 멈추는지 귀로 확인하고 점주 문항에 답한다.",
+     "required_for": [
+      "3.b"
+     ],
+     "repeat": null
+    },
+    {
+     "id": "S5-04",
+     "label": "개인정보 안내 구간",
+     "note": "민감정보 음성 여부 확인용. 이 녹음에는 개인정보가 담기므로 업로드 전 마스킹하고, 전사 원문은 저장하지 않는다.",
+     "required_for": [
+      "10.b"
+     ],
+     "repeat": null
+    }
+   ]
+  },
+  {
+   "id": "S6",
+   "name": "설치 매뉴얼",
+   "medium": "document",
+   "required": false,
+   "marker": false,
+   "marker_planes": [],
+   "constraints": {},
+   "feeds": [],
+   "note": "설치 기준 기재 여부 분석용. 점주 체크리스트 '설치 매뉴얼 제공 여부'와 연동한다.",
+   "shots": [
+    {
+     "id": "S6-01",
+     "label": "납품사 제공 설치 매뉴얼 PDF",
+     "note": "제출된 경우에만 분석한다. 미제출은 '해당 없음'이 아니라 '미제출'로 기록한다.",
+     "required_for": [],
+     "repeat": null
+    }
+   ]
+  }
+ ],
+ "marker": {
+  "id": "BFK-MARK-A",
+  "size_mm": {
+   "width": 85.6,
+   "height": 54.0
+  },
+  "inner_square_mm": 40.0,
+  "finish": "무광 필수 — 유광은 화면 반사와 겹쳐 검출률이 떨어진다",
+  "placements": [
+   {
+    "plane": "display",
+    "where": "디스플레이 베젤 위, 화면 영역을 가리지 않는 위치",
+    "used_by": [
+     "3.g",
+     "1.b(터치스크린)"
+    ]
+   },
+   {
+    "plane": "control_panel",
+    "where": "키패드·물리 버튼과 같은 면",
+    "used_by": [
+     "1.b(물리)",
+     "1.c"
+    ]
+   },
+   {
+    "plane": "dispenser",
+    "where": "배출구 바로 옆, 배출물과 같은 깊이",
+    "used_by": [
+     "1.i"
+    ]
+   },
+   {
+    "plane": "elevation",
+    "where": "바닥에서 수직으로 세워 부착 (하단 모서리를 바닥면에 접지)",
+    "used_by": [
+     "9.a",
+     "9.b"
+    ]
+   }
+  ],
+  "reject_if": [
+   "마커 4점 중 하나라도 미검출",
+   "마커 평면과 대상 평면의 각도차가 큰 경우(왜곡 임계 초과)",
+   "마커 픽셀 폭이 프레임 폭의 3% 미만 (해상도 부족)"
+  ]
+ },
+ "exemptions": [
+  {
+   "id": "무인민원발급기_표준규격",
+   "name": "「행정사무정보처리용 무인민원발급기(KIOSK) 표준규격」 차. 장애인 편의 기능",
+   "exempts": [
+    "3.a",
+    "3.b",
+    "3.d",
+    "3.h",
+    "3.k",
+    "9.a"
+   ],
+   "evidence_required": "적합성평가 통과 결과 제출"
+  }
+ ],
+ "owner_questions": [
+  {
+   "id": "1.f",
+   "name": "손 또는 팔 동작 보완",
+   "question": "카드나 지폐를 일부러 반대 방향으로 넣었을 때, 화면과 소리로 함께 안내가 나오고 해당 물건이 다시 나옵니까? (예 / 아니오 / 해당 없음)",
+   "options": [
+    "예",
+    "아니오",
+    "해당 없음"
+   ]
+  },
+  {
+   "id": "3.b",
+   "name": "시력 보완 및 대체",
+   "question": "이어폰을 꽂으면 외부 스피커 소리가 즉시 멈추고 이어폰으로만 들립니까? 그리고 음량 조절이 됩니까? (예 / 아니오)",
+   "options": [
+    "예",
+    "아니오"
+   ]
+  },
+  {
+   "id": "3.f",
+   "name": "시력 보완 및 대체",
+   "question": "키패드의 숫자 5번 키와 기능 키에 손으로 만져 알 수 있는 돌기나 점자가 있습니까? (예 / 아니오 / 해당 없음)",
+   "options": [
+    "예",
+    "아니오",
+    "해당 없음"
+   ]
+  },
+  {
+   "id": "3.k",
+   "name": "시력 보완 및 대체",
+   "question": "물리 버튼이 손으로 만져서 구분될 만큼 튀어나오거나 들어가 있습니까? 그리고 그 옆에 점자 표시가 있습니까? (예 / 아니오 / 해당 없음)",
+   "options": [
+    "예",
+    "아니오",
+    "해당 없음"
+   ]
+  }
+ ],
+ "measure_items": [
+  {
+   "id": "1.c",
+   "criterion": "모든 작동부의 최소경계상자(MBR: Minimum Bounding Box, 이하 '경계상자')는 각 변의 길이가 12mm 이상이고 표면적이 144mm² 이상이어야 한다. 이때 경계상자는 무인정보단말기 축에 정렬된 상태의 것을 의미한다.",
+   "instrument": ""
+  },
+  {
+   "id": "1.d",
+   "criterion": "모든 작동부는 2.26 kgF(22.2 N) 이하의 힘으로 누르거나, 잡아당기거나, 밀어서 조작할 수 있어야 한다.",
+   "instrument": "푸시풀 게이지 (0.1N 분해능)"
+  },
+  {
+   "id": "1.i",
+   "criterion": "배출구는 영수증, 티켓, 인쇄물 등의 배출물을 쉽게 받을 수 있고, 유실되지 않도록 설계되어야 한다. 배출물이 한 장인 경우에는 배출물을 잡을 수 있도록 최소 20mm 이상 배출하고 배출물이 유실되지 않도록 고정하여야 하며, 배출물이 여러 장인 경우에는 배출물이 튕겨 나가지 않고 담길 수 있도록 충분한 크기와 깊이를 갖춘 받침대로 배출되어야 한다.",
+   "instrument": "자·푸시풀 게이지"
+  },
+  {
+   "id": "3.g",
+   "criterion": "모든 필수적인 문자는 문자 높이가 7.25mm 이상이 되도록 표시되어야 한다.",
+   "instrument": ""
+  },
+  {
+   "id": "5.c",
+   "criterion": "무인정보단말기의 스피커는 사용자가 직접 음량을 65dBA 이상으로 조절하거나 음소거할 수 있어야 하고, 사용 후에는 자동으로 65dBA 미만으로 초기화되어야 한다.",
+   "instrument": "적분형 소음계 (A특성, FAST) — 측정 조건은 measurement-sop.yaml 참조"
+  },
+  {
+   "id": "9.a",
+   "criterion": "모든 작동부는 바닥으로부터 400mm ~ 1,220mm 사이에 있어야 한다.",
+   "instrument": "줄자 / 레이저 거리계"
+  },
+  {
+   "id": "9.b",
+   "criterion": "화면 상 모든 필수적인 시각적 정보는 바닥으로부터 1,400mm를 넘지 않아야 한다.",
+   "instrument": "줄자 / 레이저 거리계"
+  }
+ ],
+ "privacy": {
+  "targets": [
+   "이용객·직원 얼굴",
+   "화면·실물 카드 번호",
+   "주민등록번호 등",
+   "화면 표시 성명"
+  ],
+  "timing": "업로드 전, 단말에서 수행한다. 원본은 서버로 전송하지 않는다.",
+  "consent": "촬영 시작 전 앱에서 매장 촬영 동의 절차를 거친다."
+ },
+ "submission_gate": {
+  "block_if": [
+   "required: true 인 세트에 필수 컷이 하나라도 없는 경우",
+   "marker_required 항목을 판정하려는데 해당 평면의 마커가 검출되지 않은 경우",
+   "S2 fps가 30 미만인 경우 (8.a 판정 불가로 표시하고 진행은 허용)"
+  ],
+  "on_partial": {
+   "action": "proceed",
+   "note": "부분 제출도 진단은 진행한다. 다만 입력이 없는 항목은 '미판정(입력 부족)'으로 리포트에 명시하고, 어떤 컷을 추가로 찍으면 판정 가능한지 함께 인쇄한다."
+  }
+ }
+}
