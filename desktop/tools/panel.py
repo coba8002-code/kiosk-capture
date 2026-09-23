@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import http.server
+import importlib.util
 import json
 import os
 import re
@@ -46,7 +47,7 @@ if not getattr(sys, "frozen", False):
 from engine.paths import app_dir, output_dir, resource_dir   # noqa: E402
 from tools import easy                                       # noqa: E402
 
-VERSION = "0.3.1"
+VERSION = "0.4.0"
 DEFAULT_PORT = 8097          # 촬영 앱은 8099. 겹치지 않게 둔다.
 DEFAULT_WEB_URL = "https://coba8002-code.github.io/kiosk-capture/"
 
@@ -79,7 +80,7 @@ def self_cmd(args: list[str]) -> list[str]:
     return [sys.executable, str(app_dir() / "kfa.py")] + args
 
 
-def _child_env() -> dict:
+def _child_env(overrides: dict[str, str] | None = None) -> dict:
     env = dict(os.environ)
     env["PYTHONUTF8"] = "1"
     env["PYTHONIOENCODING"] = "utf-8"
@@ -90,6 +91,11 @@ def _child_env() -> dict:
     env["PYTHONUNBUFFERED"] = "1"
     env["KFA_NO_PANEL"] = "1"          # 자식이 다시 조작판을 열지 않도록
     env["KFA_UI"] = "panel"            # 자식이 Ctrl+C 대신 화면 버튼을 안내하도록
+    # 화면에서 받은 키는 이 자식 프로세스 메모리에만 넣는다. 파일·레지스트리·로그에
+    # 쓰지 않는다. 임의 환경변수 주입을 막기 위해 허용 키도 여기서 못 박는다.
+    for key, value in (overrides or {}).items():
+        if key in {"ANTHROPIC_API_KEY", "KFA_L2_PROVIDER", "KFA_L2_MODEL"}:
+            env[key] = value
     return env
 
 
@@ -101,7 +107,8 @@ ANSI = re.compile(chr(27) + r"\[[0-9;]*[A-Za-z]")
 class Job:
     """실행 중인 작업 하나. 줄 단위로 쌓아 두고 화면이 가져간다."""
 
-    def __init__(self, key: str, steps: list[list[str]], title: str):
+    def __init__(self, key: str, steps: list[list[str]], title: str,
+                 env_overrides: dict[str, str] | None = None):
         self.key = key
         self.title = title
         self.steps = steps
@@ -111,6 +118,7 @@ class Job:
         self.proc: subprocess.Popen | None = None
         self._lock = threading.Lock()
         self._stop = False
+        self.env_overrides = env_overrides or {}
 
     def emit(self, s: str) -> None:
         # 색 코드를 걷어낸다. 터미널에서는 색이지만 브라우저에서는 '[32m' 같은
@@ -140,7 +148,7 @@ class Job:
             try:
                 self.proc = subprocess.Popen(
                     self_cmd(argv), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                    stdin=subprocess.DEVNULL, env=_child_env(), cwd=str(app_dir()),
+                    stdin=subprocess.DEVNULL, env=_child_env(self.env_overrides), cwd=str(app_dir()),
                     text=True, encoding="utf-8", errors="replace", bufsize=1, **kw)
             except OSError as exc:
                 self.emit(f"[실패] 실행할 수 없습니다: {exc}")
@@ -169,7 +177,8 @@ class Job:
 STATE: dict[str, Job | None] = {"job": None}
 
 
-def start_job(key: str, extra: list[str] | None = None) -> tuple[Job | None, str]:
+def start_job(key: str, extra: list[str] | None = None,
+              ai: dict | None = None) -> tuple[Job | None, str]:
     """작업을 건다. 실패하면 **왜 실패했는지** 함께 돌려준다.
 
     예전에는 셋 다 None 을 돌려주었고 화면은 언제나 '이미 다른 작업이 돌고 있습니다'
@@ -183,6 +192,7 @@ def start_job(key: str, extra: list[str] | None = None) -> tuple[Job | None, str
     if spec is None:
         return None, f"알 수 없는 작업입니다: {key}"
     steps = spec["steps"]
+    env_overrides: dict[str, str] = {}
     if steps is None:                    # ingest — 폴더가 붙는다
         if not extra:
             return None, "진단할 촬영을 먼저 고르세요."
@@ -197,7 +207,23 @@ def start_job(key: str, extra: list[str] | None = None) -> tuple[Job | None, str
         except (OSError, easy.UnsafeZip) as exc:
             return None, str(exc)
         steps = [["ingest", str(target)]]
-    job = Job(key, steps, spec["title"])
+        if ai and ai.get("enabled"):
+            api_key = str(ai.get("api_key", "")).strip()
+            model = str(ai.get("model", "")).strip()
+            if not ai.get("consent"):
+                return None, "외부 AI로 촬영물을 전송한다는 확인이 필요합니다."
+            if not api_key:
+                return None, "Anthropic API 키를 입력하세요."
+            if len(api_key) > 300 or any(c in api_key for c in "\r\n"):
+                return None, "API 키 형식이 올바르지 않습니다."
+            if len(model) > 100 or any(c in model for c in "\r\n"):
+                return None, "모델 이름 형식이 올바르지 않습니다."
+            steps[0] += ["--l2", "anthropic", "--yes"]
+            env_overrides = {"ANTHROPIC_API_KEY": api_key,
+                             "KFA_L2_PROVIDER": "anthropic"}
+            if model:
+                env_overrides["KFA_L2_MODEL"] = model
+    job = Job(key, steps, spec["title"], env_overrides)
     STATE["job"] = job
     threading.Thread(target=job.run, daemon=True).start()
     return job, ""
@@ -340,6 +366,15 @@ button[disabled]{opacity:.45;cursor:not-allowed}
   margin-top:16px;font-size:15.5px}
 .okbox{background:var(--ok-bg);color:var(--ok);border-radius:10px;padding:14px 16px;
   margin-top:16px;font-size:15.5px;font-weight:700}
+.ai-strip{margin-top:20px;background:var(--surface);border:2px solid var(--deep);border-radius:14px;
+  padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap}
+.ai-strip b{display:block;font-size:18px}.ai-strip span{color:var(--muted);font-size:14px}
+.form{max-width:650px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px}
+.field{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}.field label{font-weight:800}
+.field input{font:inherit;min-height:48px;border:2px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--ink);background:#fff}
+.field input:focus{outline:3px solid var(--a-bg);border-color:var(--a)}
+.check{display:flex;gap:11px;align-items:flex-start;margin:18px 0}.check input{width:24px;height:24px;flex:none}
+.privacy-lock{border-left:5px solid var(--deep);padding:12px 15px;background:var(--surface-2);font-size:14px}
 .hide{display:none}
 """
 
@@ -375,6 +410,11 @@ def page(token: str) -> str:
         <button class="primary" onclick="pick()">사진 고르기</button>
       </div>
     </div>
+    <div class="ai-strip">
+      <div><b>AI 보조판단 <span id="aibadge">꺼짐</span></b>
+        <span id="aidesc">기본은 꺼져 있습니다. 켜면 촬영물에서 위반 후보를 선별합니다.</span></div>
+      <button class="btn ghost" onclick="aiOpen()">AI 설정</button>
+    </div>
     <div class="tools">
       <button class="btn primary" onclick="location.href='/review?t='+T">검토 · 실측 입력</button>
       <button class="btn ghost" onclick="openp('manual')">설명서 열기</button>
@@ -384,6 +424,23 @@ def page(token: str) -> str:
       <button class="btn ghost" onclick="more()">그 밖의 기능</button>
     </div>
     <div id="msg"></div>
+  </section>
+
+  <section id="ai" class="hide">
+    <h2>AI 보조판단 설정</h2>
+    <p class="sub">API 키는 이 화면을 닫을 때 사라지며 파일이나 로그에 저장하지 않습니다.</p>
+    <div class="form">
+      <div class="privacy-lock"><b>AI의 역할</b><br>촬영물에서 위반 후보를 골라 검토자에게 보냅니다. AI는 ‘부적합’을 확정하지 않으며, 모델의 ‘적합’도 최종 적합으로 인정하지 않습니다.</div>
+      <div class="field" style="margin-top:18px"><label for="apikey">Anthropic API 키</label>
+        <input id="apikey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…"></div>
+      <div class="field"><label for="aimodel">모델 이름</label>
+        <input id="aimodel" type="text" autocomplete="off" spellcheck="false" placeholder="계정에서 사용할 수 있는 모델 이름"></div>
+      <label class="check"><input id="aiconsent" type="checkbox"><span>가림 처리 여부를 다시 확인했습니다. 진단할 때 촬영 이미지가 Anthropic API로 전송되는 것에 동의합니다.</span></label>
+      <div id="aistatus" class="note">연결 상태를 확인하는 중…</div>
+      <div class="row"><button class="btn primary" onclick="aiSave()">이번 실행에만 사용</button>
+        <button class="btn ghost" onclick="aiOff()">AI 끄기</button>
+        <button class="btn ghost" onclick="home()">취소</button></div>
+    </div>
   </section>
 
   <section id="work" class="hide">
@@ -427,6 +484,7 @@ def page(token: str) -> str:
 <script>
 const T = "{token}";
 let seen = 0, timer = null, cur = null;
+let aiConfig = {{enabled:false, api_key:'', model:'', consent:false}};
 
 function api(p, body) {{
   return fetch(p + (p.includes('?') ? '&' : '?') + 't=' + T,
@@ -434,7 +492,7 @@ function api(p, body) {{
              body: JSON.stringify(body)}} : {{}}).then(r => r.json());
 }}
 function show(id) {{
-  for (const s of ['home','work','picker','more']) document.getElementById(s).classList.toggle('hide', s !== id);
+  for (const s of ['home','work','picker','more','ai']) document.getElementById(s).classList.toggle('hide', s !== id);
   window.scrollTo(0,0);
 }}
 function home() {{ if (timer) clearInterval(timer); timer = null; show('home'); }}
@@ -446,7 +504,7 @@ function job(key, extra) {{
   document.getElementById('log').textContent = '';
   document.getElementById('extra').innerHTML = '';
   document.getElementById('ofolder').classList.add('hide');
-  api('/run', {{job:key, extra:extra||[]}}).then(r => {{
+  api('/run', {{job:key, extra:extra||[], ai:key === 'ingest' ? aiConfig : null}}).then(r => {{
     if (!r.ok) {{ alert(r.error || '시작하지 못했습니다'); return; }}
     document.getElementById('wt').textContent = r.title;
     document.getElementById('stop').classList.toggle('hide', !r.long);
@@ -517,6 +575,36 @@ function finish() {{
 }}
 function stop() {{ api('/stop', {{}}).then(poll); }}
 function serve() {{ job('serve'); }}
+function aiOpen() {{
+  show('ai');
+  document.getElementById('apikey').value = aiConfig.api_key;
+  document.getElementById('aimodel').value = aiConfig.model;
+  document.getElementById('aiconsent').checked = aiConfig.consent;
+  api('/ai/status').then(r => {{
+    document.getElementById('aistatus').className = r.sdk ? 'okbox' : 'note';
+    document.getElementById('aistatus').textContent = r.sdk
+      ? 'AI 연결 모듈 준비됨 · API 키를 입력하면 진단 때만 사용합니다.'
+      : 'AI 연결 모듈이 없습니다. 이 배포본에서는 AI를 켤 수 없습니다.';
+  }});
+}}
+function aiSave() {{
+  const key = document.getElementById('apikey').value.trim();
+  const consent = document.getElementById('aiconsent').checked;
+  if (!key) {{ alert('API 키를 입력하세요.'); return; }}
+  if (!consent) {{ alert('외부 전송 내용을 확인하고 동의란을 선택하세요.'); return; }}
+  aiConfig = {{enabled:true, api_key:key,
+    model:document.getElementById('aimodel').value.trim(), consent:true}};
+  document.getElementById('aibadge').textContent = '켜짐 · 이번 실행만';
+  document.getElementById('aidesc').textContent = '진단할 때 촬영 이미지가 외부 API로 전송됩니다. 검토자가 최종 확정합니다.';
+  home(); msg('<div class="okbox">AI 보조판단을 켰습니다. 이제 ③ 진단하기를 실행하세요.</div>');
+}}
+function aiOff() {{
+  aiConfig = {{enabled:false, api_key:'', model:'', consent:false}};
+  document.getElementById('apikey').value = '';
+  document.getElementById('aibadge').textContent = '꺼짐';
+  document.getElementById('aidesc').textContent = '기본은 꺼져 있습니다. 켜면 촬영물에서 위반 후보를 선별합니다.';
+  home(); msg('<div class="okbox">AI 보조판단을 껐고 입력한 키를 지웠습니다.</div>');
+}}
 function pick() {{
   show('picker');
   const el = document.getElementById('items');
@@ -626,6 +714,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self._json(self._log_state())
         elif path == "/bundles":
             self._json({"items": _bundle_list()})
+        elif path == "/ai/status":
+            self._json({"ok": True,
+                        "sdk": importlib.util.find_spec("anthropic") is not None,
+                        "key_in_environment": bool(os.environ.get("ANTHROPIC_API_KEY"))})
         elif path == "/review":
             self._send(200, (resource_dir() / 'app' / 'review.html').read_bytes(), 'text/html; charset=utf-8')
         elif path == '/review/media':
@@ -694,7 +786,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
         if path == "/run":
             key = str(b.get("job", ""))
             extra = [str(x) for x in (b.get("extra") or [])]
-            job, why = start_job(key, extra)
+            ai = b.get("ai") if isinstance(b.get("ai"), dict) else None
+            job, why = start_job(key, extra, ai)
             if job is None:
                 self._json({"ok": False, "error": why})
                 return

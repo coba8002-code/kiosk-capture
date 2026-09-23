@@ -61,7 +61,7 @@ if not getattr(sys, "frozen", False):
 
 from engine.paths import output_dir, resource_dir  # noqa: E402
 
-VERSION = "0.3.1"
+VERSION = "0.4.0"
 
 MENU = [
     ("1", "check",     "설치·동작 점검",        "처음이라면 여기부터"),
@@ -79,6 +79,7 @@ MENU = [
     ("m", "manual",    "사용자 매뉴얼 만들기",     "설치·설정·사용법 한 파일"),
     ("w", "web",       "웹서버용 내보내기",       "촬영 앱을 서버에 올린다"),
     ("s", "self-check","자기 검사",             "우리 화면이 우리 기준을 통과하는가"),
+    ("f", "field-qa",  "현장자료 품질 점검",     "누락·마커·음성·기록 확인"),
     ("0", "open",      "결과 폴더 열기",        ""),
 ]
 
@@ -171,6 +172,10 @@ def run(cmd: str, argv: list[str]) -> int:
             from tools import gaps
             sys.argv = ["gaps"] + argv
             return gaps.main()
+        if cmd in ("field-qa", "quality"):
+            from tools import field_qa
+            sys.argv = ["field-qa"] + argv
+            return field_qa.main()
         if cmd in ("serve-app", "serve"):
             from tools import serve_app
             sys.argv = ["serve-app"] + argv

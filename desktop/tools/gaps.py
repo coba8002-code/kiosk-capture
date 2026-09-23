@@ -113,8 +113,9 @@ def audit() -> dict:
         sid = s["id"]
         consumed = sid in pipeline.CONSUMED_SETS
         via_l2 = sid in pipeline.L2_CONSUMED_SETS
+        quality = sid in pipeline.QUALITY_CONSUMED_SETS
         sets.append({"id": sid, "name": s["name"], "feeds": len(rs.fed_by(sid)),
-                     "consumed": consumed, "via_l2": via_l2,
+                     "consumed": consumed, "via_l2": via_l2, "quality": quality,
                      "required": bool(s.get("required"))})
 
     # 사람 손이 필요한 경로.
@@ -203,6 +204,8 @@ def main() -> int:
     for s in sets:
         if s["consumed"]:
             state = "소비 중"
+        elif s["quality"]:
+            state = "수집 품질 검사 중 · 음성 내용은 검토자 확인"
         elif s["via_l2"]:
             state = "음성·영상 자동 분석 미지원 — 검토자가 직접 확인"
             orphan += 1

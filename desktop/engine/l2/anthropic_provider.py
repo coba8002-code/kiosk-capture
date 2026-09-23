@@ -1,16 +1,12 @@
 """Anthropic 멀티모달 공급자.
 
 없으면 없다고 말한다
-    anthropic 패키지도, API 키도 exe 에 넣지 않는다. 71MB 짜리 실행파일에
-    쓰지도 않을 SDK 를 넣을 이유가 없고, 키를 넣는 것은 애초에 안 된다.
-    둘 중 하나라도 없으면 available() 이 False 와 함께 **그 이유**를 돌려주고,
-    해당 항목들은 검토자에게 넘어간다. 조용히 빈 판정이 생기지 않는다.
+    0.4 배포본은 anthropic SDK를 포함하지만 API 키는 절대 넣지 않는다.
+    SDK나 키 중 하나라도 없으면 available() 이 False와 함께 **그 이유**를
+    돌려주고, 해당 항목들은 검토자에게 넘어간다. 조용히 빈 판정이 생기지 않는다.
 
     켜는 법:
-        pip install anthropic
-        set ANTHROPIC_API_KEY=...
-        set KFA_L2_PROVIDER=anthropic
-        KFA.exe ingest <번들> --l2
+        KFA.exe 실행 → AI 설정 → API 키 입력 → 이번 실행에만 사용
 
 무엇이 밖으로 나가는가
     이 공급자는 촬영물을 Anthropic API 로 보낸다. 현장 사진에는 개인정보가

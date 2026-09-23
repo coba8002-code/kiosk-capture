@@ -87,11 +87,19 @@ def load_ocr_calibration(engine: str) -> tuple[float, bool, dict]:
     if not engine:
         return OCR_BOX_FACTOR, False, {}
     import json
-    from ..paths import output_dir
-    path = output_dir() / OCR_CALIBRATION_FILE
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError):
+    from ..paths import output_dir, resource_dir
+    # 설치 자리에서 새로 교정한 값을 먼저 쓰고, 없으면 배포본에 검증해 넣은
+    # 기본 교정을 쓴다. 실행파일도 첫 실행부터 한글 OCR을 사용할 수 있게 한다.
+    candidates = [output_dir() / OCR_CALIBRATION_FILE,
+                  resource_dir() / "rules" / OCR_CALIBRATION_FILE]
+    data = None
+    for path in candidates:
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            break
+        except (OSError, json.JSONDecodeError):
+            continue
+    if data is None:
         return OCR_BOX_FACTOR, False, {}
     rec = (data.get("engines") or {}).get(engine)
     if not rec or "factor" not in rec:

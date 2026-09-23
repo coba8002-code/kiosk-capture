@@ -1,4 +1,4 @@
-# 배리어프리 키오스크 현장진단 — KFA 0.3.0
+# 배리어프리 키오스크 현장진단 — KFA 0.4.0
 
 - [촬영 앱 열기](https://coba8002-code.github.io/kiosk-capture/)
 - [사용자 매뉴얼](manual/사용자매뉴얼.html) · [PDF 다운로드](manual/사용자매뉴얼.pdf)
@@ -26,7 +26,9 @@ python -m venv .venv
 .venv\Scripts\python.exe kfa.py
 ```
 
-OCR와 외부 AI 패키지는 선택 사항입니다. 자세한 설정과 한계는 사용자 매뉴얼을 확인하세요.
+배포용 KFA.exe에는 한글 PP-OCRv5 모델이 포함됩니다. 외부 AI는 선택 사항이며,
+조작판에서 API 키를 이번 실행에만 입력하고 외부 전송에 동의한 경우에만 동작합니다.
+자세한 설정과 한계는 사용자 매뉴얼을 확인하세요.
 
 ## 저장소 구성
 

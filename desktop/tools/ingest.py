@@ -22,7 +22,7 @@ from pathlib import Path
 if not getattr(sys, "frozen", False):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from engine import pipeline, rules as R                       # noqa: E402
+from engine import pipeline, quality, rules as R              # noqa: E402
 from engine.paths import output_dir                           # noqa: E402
 from engine.report import export as rexport, matrix, render   # noqa: E402
 
@@ -195,6 +195,11 @@ def main() -> int:
     outdir = Path(tempfile.mkdtemp(prefix=f"report_{safe_id}_", dir=output_dir()))
     saved: list[Path] = []
 
+    # 판정과 별개로 입력 품질을 항상 남긴다. 현장에서 무엇을 다시 찍어야 하는지
+    # 판정표보다 먼저 볼 수 있어야 한다.
+    quality_report = quality.audit(bundle, R.load_protocol())
+    saved += quality.write(quality_report, outdir)
+
     md_path = Path(a.markdown) if a.markdown else outdir / "report.md"
     md_path.write_text(matrix.to_markdown(report), encoding="utf-8")
     saved.append(md_path)
@@ -222,6 +227,9 @@ def main() -> int:
     print("=" * 74 + "\n")
     for p in saved:
         print(f"  {p}")
+    print(f"\n  현장자료 품질  {quality_report.status}"
+          f"  (보완 {sum(x.level == 'block' for x in quality_report.issues)}건 · "
+          f"주의 {sum(x.level == 'warn' for x in quality_report.issues)}건)")
     print("\n  HTML 두 개는 브라우저에서 열어 Ctrl+P 로 PDF 저장하세요.")
 
     print("\n  " + " ".join(report.scope_note.split())[:150] + " …")

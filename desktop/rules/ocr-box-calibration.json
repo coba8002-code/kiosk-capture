@@ -1,0 +1,20 @@
+{
+  "schema": "kfa.ocr-calibration/1",
+  "engines": {
+    "rapidocr:PP-OCRv5:korean": {
+      "ok": true,
+      "factor": 0.8252,
+      "spread": 0.077,
+      "n": 13,
+      "read_failures": 8,
+      "hangul_read": 4,
+      "hangul_total": 4,
+      "hangul_ok": true,
+      "font": "malgun.ttf",
+      "render_px": 64,
+      "box_convention": "PP-OCRv5 korean 상자",
+      "per_script": {"hangul": 0.8081, "latin_caps": 0.9589, "digits": 0.8213},
+      "method": "참 잉크 높이 ÷ (OCR 상자 높이 × CAP_RATIO). 중앙값 채택"
+    }
+  }
+}

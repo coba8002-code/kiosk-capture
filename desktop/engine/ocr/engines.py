@@ -17,7 +17,7 @@ import sys
 
 from .provider import MAX_LINES, MIN_TEXT_CONFIDENCE, OcrResult, Provider, TextLine
 
-# 실행 파일 안에서는 OCR 엔진을 쓸 수 없다.
+# 0.3까지 실행 파일 안에서는 OCR 엔진을 쓰지 않았다.
 #
 # PyInstaller 가 rapidocr 을 코드만 끌어가고 모델·config.yaml 은 두고 온다.
 # 그러면 available() 은 '사용 가능'이라 하고 read() 는
@@ -25,7 +25,8 @@ from .provider import MAX_LINES, MIN_TEXT_CONFIDENCE, OcrResult, Provider, TextL
 # 로 죽는다 — 실제로 그렇게 진단이 통째로 멈췄다.
 #
 # 반만 들어간 엔진을 들고 있느니 없다고 말하는 편이 낫다.
-# OCR 이 필요하면 소스로 실행한다:  python kfa.py ingest ...
+# 0.4는 모델·config·ONNX 런타임을 함께 묶고 실제 EXE 스모크 테스트를 통과한
+# 경우에만 배포한다. 구형·선택 공급자는 여전히 실행파일에서 막는다.
 FROZEN = getattr(sys, "frozen", False)
 FROZEN_NOTE = (
     "실행 파일에는 OCR 엔진을 넣지 않습니다(모델 파일이 함께 들어가지 않아 "
@@ -118,8 +119,6 @@ class RapidOcrProvider(Provider):
         return f"{self.name}:{self.REC_VERSION}:{self.lang}"
 
     def available(self) -> tuple[bool, str]:
-        if FROZEN:
-            return False, FROZEN_NOTE
         try:
             import rapidocr                                    # noqa: F401
         except ImportError:

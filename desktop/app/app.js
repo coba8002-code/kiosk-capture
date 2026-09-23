@@ -850,6 +850,14 @@ async function storeShot(blob, masked) {
   if (type === 'photo') {
     rec.quality_issues.push(...await quickPhotoQuality(blob));
   }
+  // S5는 아이폰에서 video/mp4로 들어올 수 있다. 실제 MIME이 영상이어도
+  // 오디오 트랙을 Web Audio API로 읽어 품질을 검사한다. 이 값은 dBFS이며
+  // 교정된 소음계의 dBA 판정값으로 절대 사용하지 않는다.
+  if (set.id === 'S5' && (type === 'audio' || type === 'video')) {
+    const aq = await quickAudioQuality(blob);
+    rec.audio_metrics = aq.metrics;
+    rec.quality_issues.push(...aq.issues);
+  }
 
   try {
     await DB.putShot(rec);
@@ -899,6 +907,53 @@ async function quickPhotoQuality(blob) {
     if (edges / n < 0.012) issues.push('흐리거나 초점이 약함');
   } catch { /* 브라우저에서 확인할 수 없으면 PC 분석으로 넘긴다 */ }
   return [...new Set(issues)];
+}
+
+/** S5 녹음의 무음·클리핑·길이만 기기 안에서 검사한다.
+ * 개인정보가 섞일 수 있어 전사문은 만들거나 저장하지 않는다.
+ */
+async function quickAudioQuality(blob) {
+  const issues = [];
+  let ctx;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return { metrics: {}, issues: ['이 기기에서 음질 자동 검사를 지원하지 않음'] };
+    ctx = new AC();
+    const buf = await ctx.decodeAudioData((await blob.arrayBuffer()).slice(0));
+    const total = buf.length;
+    const stride = Math.max(1, Math.floor(total / 200000));
+    let n = 0, sum2 = 0, peak = 0, silent = 0, clipped = 0;
+    const silenceAmp = Math.pow(10, -50 / 20);
+    for (let i = 0; i < total; i += stride) {
+      let value = 0;
+      for (let ch = 0; ch < buf.numberOfChannels; ch++) {
+        value += Math.abs(buf.getChannelData(ch)[i] || 0);
+      }
+      value /= Math.max(1, buf.numberOfChannels);
+      peak = Math.max(peak, value); sum2 += value * value; n++;
+      if (value < silenceAmp) silent++;
+      if (value >= 0.999) clipped++;
+    }
+    const db = (v) => 20 * Math.log10(Math.max(v, 1e-12));
+    const duration = buf.duration;
+    const rms = db(Math.sqrt(sum2 / Math.max(1, n)));
+    const silence = silent / Math.max(1, n);
+    const clipping = clipped / Math.max(1, n);
+    if (duration < 2) issues.push(`녹음이 너무 짧음 (${duration.toFixed(1)}초)`);
+    if (rms < -45) issues.push(`신호가 너무 작음 (${rms.toFixed(1)} dBFS)`);
+    if (silence > 0.95) issues.push(`대부분 무음 (${Math.round(silence * 100)}%)`);
+    if (clipping > 0.005) issues.push(`클리핑이 많음 (${(clipping * 100).toFixed(2)}%)`);
+    return { metrics: {
+      duration_s: Number(duration.toFixed(2)), sample_rate: buf.sampleRate,
+      channels: buf.numberOfChannels, peak_dbfs: Number(db(peak).toFixed(1)),
+      rms_dbfs: Number(rms.toFixed(1)), silence_ratio: Number(silence.toFixed(4)),
+      clipping_ratio: Number(clipping.toFixed(4)), unit: 'dBFS', legal_measurement: false,
+    }, issues };
+  } catch (e) {
+    return { metrics: {}, issues: ['음성 파일을 자동 분석하지 못함'] };
+  } finally {
+    try { if (ctx) await ctx.close(); } catch (e) { /* 닫기 실패는 무시 */ }
+  }
 }
 
 /** 남은 저장 공간을 확인해 부족하면 알린다.
@@ -1106,6 +1161,8 @@ async function exportBundle() {
       captured_at: s.captured_at,
       metadata: { ...(App.shotMeta[s.shot] || {}), captured_at: s.captured_at },
       quality_issues: s.quality_issues || [],
+      marker_hint: s.marker_hint,
+      audio_metrics: s.audio_metrics || {},
       note: (s.quality_issues || []).join(' · '),
     });
   }
@@ -1122,7 +1179,7 @@ async function exportBundle() {
     captured_at: new Date().toISOString(),
     captured_by: App.captured_by.trim(),
     protocol_version: App.protocol.protocol_version,
-    app_version: '0.2.0',
+    app_version: '0.4.0',
     shots,
     owner_answers: App.answers,
     measurements: {},

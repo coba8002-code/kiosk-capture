@@ -7,8 +7,8 @@
 무엇을 넣고 무엇을 빼는가
 ────────────────────────────────────────────────────────────────────
     넣는다   실행 파일 · 매뉴얼(PDF·HTML) · 인쇄물 2종 · 소스 전체
-             소스를 넣는 이유는 **실행 파일에 OCR 이 없기 때문**이다.
-             문자 높이(3.g)를 자동으로 재려면 소스로 실행해야 한다.
+             소스는 재현·감사·고급 설정을 위해 함께 넣는다.
+             0.4부터 실행 파일에도 한글 OCR 모델을 완전 동봉한다.
 
     뺀다     빌드 찌꺼기(build/ dist/ __pycache__) · 진단 결과물 · 데모 번들
              **그리고 인증서 폴더 전체.**
@@ -33,12 +33,23 @@ import sys
 import zipfile
 from pathlib import Path
 
+
+def _setup_console() -> None:
+    """Windows 직접 실행에서도 한글·기호 출력이 중단되지 않게 한다."""
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure:
+            reconfigure(encoding="utf-8", errors="replace", line_buffering=True)
+
+
+_setup_console()
+
 if not getattr(sys, "frozen", False):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from engine.paths import resource_dir                       # noqa: E402
 
-VERSION = "0.3.1"
+VERSION = "0.4.0"
 PKG_NAME = f"KFA-{VERSION}"
 
 # 소스에서 제외할 것 (경로 조각 또는 glob)

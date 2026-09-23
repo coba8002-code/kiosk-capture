@@ -51,7 +51,13 @@ CONSUMED_SETS = {
 # L2 공급자를 켠 경우에만 읽는 세트. judge 항목의 evidence 를 따라간다.
 # 꺼져 있으면 이 세트들은 '찍기는 하는데 아무도 안 읽는' 상태이고, 그렇게 보고한다.
 L2_CONSUMED_SETS = {
-    "S5": "음성 안내 판단(1.g·3.a·3.c·5.a·5.b·7.b·10.b) — 공급자를 켠 경우",
+    "S5": "관련 항목에 파일 존재를 연결 — 현재 이미지 공급자는 음성 내용 직접 분석 불가",
+}
+
+# 판정과 별도로 수집 품질을 읽는 세트. S5는 휴대폰에서 계산한 dBFS 지표로
+# 무음·클리핑·길이를 검사한다. 이 값은 법정 dBA 판정이 아니다.
+QUALITY_CONSUMED_SETS = {
+    "S5": "길이·무음·클리핑·dBFS 수집 품질 검사",
 }
 
 # 이 파이프라인이 계측만으로 판정을 만드는 항목.
@@ -104,6 +110,10 @@ class Shot:
     marker_plane: str | None = None
     masked: bool = False
     note: str = ""
+    metadata: dict[str, Any] = field(default_factory=dict)
+    quality_issues: list[str] = field(default_factory=list)
+    marker_hint: str | None = None
+    audio_metrics: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -163,7 +173,11 @@ def load_bundle(path: str | Path) -> CaptureBundle:
     if not manifest_path.exists():
         raise BundleError(f"manifest.json 이 없습니다: {manifest_path}")
 
-    root = manifest_path.parent
+    # 파일은 아래에서 resolve() 하는데 루트만 상대경로로 두면, 분석 뒤
+    # path.relative_to(bundle.root)에서 같은 폴더끼리도 비교가 실패한다.
+    # CLI에서 `assets/demo-bundle`처럼 상대경로를 넣었을 때 실제 EXE가 죽었다.
+    root = manifest_path.resolve().parent
+    manifest_path = root / manifest_path.name
     try:
         m = json.loads(manifest_path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
@@ -213,6 +227,12 @@ def load_bundle(path: str | Path) -> CaptureBundle:
             set_id=s.get("set", ""), shot_id=s.get("shot", ""), path=f,
             marker_plane=s.get("marker_plane"), masked=bool(s.get("masked")),
             note=s.get("note", ""),
+            metadata=s.get("metadata") if isinstance(s.get("metadata"), dict) else {},
+            quality_issues=[str(x) for x in (s.get("quality_issues") or [])
+                            if isinstance(x, (str, int, float))],
+            marker_hint=(str(s.get("marker_hint")) if s.get("marker_hint") else None),
+            audio_metrics=(s.get("audio_metrics")
+                           if isinstance(s.get("audio_metrics"), dict) else {}),
         ))
     if missing:
         raise BundleError(

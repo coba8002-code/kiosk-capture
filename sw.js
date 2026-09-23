@@ -26,7 +26,7 @@
  */
 // 배포본의 화면·프로토콜 구조가 바뀌면 반드시 올린다. 같은 이름을 재사용하면
 // 기존 사용자는 첫 새로고침에서 낡은 app.js를 한 번 더 받게 된다.
-const CACHE = 'kfa-app-v5';
+const CACHE = 'kfa-app-v6';
 const SHELL = ['./', './index.html', './style.css', './app.js', './zip.js',
                './icon.svg', './manifest.webmanifest', './protocol.json'];
 
