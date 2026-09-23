@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <rect width="512" height="512" rx="96" fill="#0E2439"/>
+  <!-- 점자블록 옐로우 액센트 -->
+  <rect x="96" y="96" width="320" height="40" rx="8" fill="#F2B705"/>
+  <!-- 마커 카드 -->
+  <rect x="128" y="176" width="256" height="176" rx="12" fill="#FFFFFF"/>
+  <rect x="196" y="204" width="120" height="120" fill="#141414"/>
+  <rect x="216" y="224" width="20" height="20" fill="#FFFFFF"/>
+  <rect x="256" y="224" width="20" height="20" fill="#FFFFFF"/>
+  <rect x="236" y="244" width="20" height="20" fill="#FFFFFF"/>
+  <rect x="276" y="244" width="20" height="20" fill="#FFFFFF"/>
+  <rect x="216" y="284" width="20" height="20" fill="#FFFFFF"/>
+  <rect x="276" y="284" width="20" height="20" fill="#FFFFFF"/>
+  <!-- 촬영 표시 -->
+  <circle cx="256" cy="404" r="34" fill="none" stroke="#F2B705" stroke-width="14"/>
+</svg>

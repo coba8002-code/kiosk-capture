@@ -1,0 +1,1239 @@
+# =============================================================================
+#  무인정보단말기 접근성 검증 기준 — 판정 룰 DB
+#  Source: 「장애인·고령자 등의 정보 접근 및 이용 편의 증진을 위한 고시」
+#          [별표 5] 무인정보단말기 접근성 검증 기준 (제18조제1항 관련)
+#
+#  이 파일이 이 사업의 단일 진실 원천(single source of truth)이다.
+#  엔진·앱·리포트는 모두 이 파일을 읽고, 이 파일에 없는 판정은 내리지 않는다.
+#
+#  저작권 주의 -------------------------------------------------------------
+#   · 별표5는 행정규칙(공공저작물)이므로 criterion 원문 인용이 가능하다.
+#   · KS X 9211:2025는 "상업적 활용 금지" 표시가 있는 저작물이다.
+#     따라서 ks_ref 필드에는 절 번호만 적고, 본문은 어떤 형태로도 옮기지 않는다.
+#     리포트에 KS 문구를 노출하면 안 된다. (BUILD_SPEC §10 참조)
+#
+#  version: 0.1.0
+#  updated: 2026-08-21
+# =============================================================================
+
+meta:
+  version: "0.1.0"
+  standard: "고시 [별표 5] 무인정보단말기 접근성 검증 기준"
+  article: "제18조제1항"
+  total_items: 40
+  graded_items: 8          # 우수/보통 등급이 추가로 부여되는 항목 수
+  updated: "2026-08-21"
+
+# -----------------------------------------------------------------------------
+# 열거형 정의 — 엔진과 검증 스크립트가 참조한다.
+# -----------------------------------------------------------------------------
+enums:
+
+  product_type:
+    중대형: "화면 대각선 길이 28cm 초과"
+    소형:   "화면 대각선 길이 28cm 이하"
+
+  scope:
+    기본:        "유형·용도와 무관하게 반드시 평가"
+    물건 투입:   "카드·지폐·동전·상품권·고지서 등 투입 기능이 있는 경우"
+    스캐너:      "QR·바코드·신분증 고정식 스캐너가 있는 경우"
+    지문 인식:   "지문 인식 장치가 있는 경우"
+    배출물:      "영수증·티켓·인쇄물 배출 기능이 있는 경우"
+    보조 기능:   "점자 디스플레이·수어 영상 등 보조 기능을 제공하는 경우"
+    음성 입력:   "음성 입력을 요구하는 기능이 있는 경우"
+    개인정보 입력: "사용자 식별·개인정보 입력이 필요한 경우"
+
+  track:
+    A_AI:      "AI 1차 판정 — 촬영물에서 계측하거나 해석한다"
+    B_OWNER:   "점주 셀프 체크 — 카메라가 볼 수 없는 동작을 현장에서 확인한다"
+    C_MEASURE: "전문 실측 — 계측 장비로 확정한다"
+    D_USER:    "사용자 검증 — 별표5 2항. 이 룰 DB의 판정 대상이 아니다"
+
+  ai_role:
+    measure: "L1 결정론적 계측. 수식과 측정값으로 산출하며 재현 가능하다"
+    judge:   "L2 멀티모달 해석. 의미 판단이 필요하며 확신도를 함께 낸다"
+    screen:  "1차 스크리닝만. 확정 근거가 되지 못하고 사람에게 넘긴다"
+    none:    "AI가 관여하지 않는다"
+
+  # AI 판정의 사정거리. 이 필드가 리포트의 정직성을 만든다.
+  ai_verdict_scope:
+    both:      "적합·부적합 양방향 제시 가능"
+    fail_only: "위반은 잡아내지만 적합을 증명하지는 못한다 → 적합은 상위 트랙이 확정"
+    none:      "AI는 맥락 자료만 제공한다"
+
+  final_by:
+    REVIEWER: "검토자 승인으로 확정"
+    MEASURE:  "전문 실측값으로 확정"
+    OWNER:    "점주 현장 확인으로 확정"
+
+  remedy_type:
+    SW:   "소프트웨어 패치 — 화면·음성·플로우 수정"
+    HW:   "하드웨어 보완 — 부착 모듈·부품 교체·구조 개조"
+    OPS:  "운영·설치 환경 개선 — 위치·동선·조명·비품"
+    NONE: "표준 처방 없음 — 개별 검토"
+
+  difficulty: [낮음, 중간, 높음]
+  cost_band:
+    1: "10만 원 미만 또는 무비용"
+    2: "10만~100만 원"
+    3: "100만 원 이상 또는 기기 교체 검토"
+
+# -----------------------------------------------------------------------------
+# 별표5 1. 설계지침 검증 기준 — 10개 영역 40항목
+# -----------------------------------------------------------------------------
+categories:
+
+  # ===========================================================================
+  - area: 1
+    name: "손 또는 팔 동작 보완"
+    items:
+
+      - id: "1.a"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "버튼과 화면을 한 손만으로 조작할 수 있어야 합니다"
+        criterion: >-
+          모든 작동부(터치스크린, 터치스크린 이외의 무인정보단말기의 물리적 작동부,
+          무인정보단말기와 연결된 외부 유·무선 자판(키패드 또는 키보드 등)를 포함한다.
+          이하 같다)는 한 손으로 조작할 수 있어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: screen
+        ai_verdict_scope: fail_only
+        final_by: REVIEWER
+        evidence: [S2]
+        marker_required: false
+        params: {}
+        detect:
+          signals:
+            - "동시 다중 입력(두 손 필요) 요구 구간"
+            - "빠른 반복 동작 요구"
+            - "과도한 손목 꺾임이 필요한 조작부 각도"
+            - "핀치·회전 등 멀티터치 제스처 강제"
+        ks_ref: ["KS X 9211:2025 §7 (조작 관련 검사항목)"]
+        triage_ref: "단순 조작 및 한 손 사용 가능성 분석 (Video AI) / 원본 51~52행"
+        remedy: { type: SW, difficulty: 중간, cost_band: 2 }
+        notes: >-
+          실제 한 손 조작 가능 여부와 필요 조작력은 사람이 최종 확인한다.
+          영상에서 위반 신호가 잡히면 '위반 의심'으로만 올린다.
+
+      - id: "1.b"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "버튼끼리 너무 붙어 있으면 안 됩니다 (화면 2.5mm·물리 버튼 0.5mm 이상)"
+        criterion: >-
+          이웃한 버튼 사이에는 상호 구분이 가능한 충분한 간격(터치스크린의 경우 2.5mm 이상,
+          물리적 작동부의 경우 0.5mm 이상)을 두어야 한다.
+        verdict:
+          base: 적합/부적합
+          grade:
+            우수: "터치스크린과 물리적 작동부의 모든 버튼 사이에 2.5mm 이상의 간격이 있는 경우"
+            보통: "터치스크린의 모든 버튼 사이에 2.5mm 이상의 간격이 있고, 물리적 작동부의 모든 버튼 사이에 0.5mm 이상의 간격이 있는 경우"
+        track: A_AI
+        ai_role: measure
+        ai_verdict_scope: fail_only
+        final_by: MEASURE
+        grade_by: MEASURE
+        evidence: [S1, S3]
+        marker_required: true
+        params:
+          touch_gap_min_mm: 2.5
+          physical_gap_min_mm: 0.5
+          grade_excellent_all_gap_mm: 2.5
+        logic_ref: "calc/button_gap.py"
+        ks_ref: ["KS X 9211:2025 §7", "트리아지 원본 39행"]
+        triage_ref: "버튼 및 키 크기·간격 추정 (Vision AI) / 원본 38~39행"
+        remedy: { type: SW, difficulty: 낮음, cost_band: 1 }
+        notes: >-
+          터치스크린 2.5mm는 마커 기준 환산으로 위반 검출이 가능하다.
+          물리적 작동부 0.5mm는 촬영 해상도·렌즈 왜곡의 오차 범위와 겹치므로
+          AI가 '적합'을 선언하지 않는다. 적합 확정은 실측으로만 한다.
+
+      - id: "1.c"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "버튼 하나하나가 가로·세로 12mm 이상이어야 합니다"
+        criterion: >-
+          모든 작동부의 최소경계상자(MBR: Minimum Bounding Box, 이하 '경계상자')는
+          각 변의 길이가 12mm 이상이고 표면적이 144mm² 이상이어야 한다.
+          이때 경계상자는 무인정보단말기 축에 정렬된 상태의 것을 의미한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: C_MEASURE
+        ai_role: measure
+        ai_verdict_scope: fail_only
+        final_by: MEASURE
+        evidence: [S1, S3]
+        marker_required: true
+        params:
+          # 법적 판정 — 축 정렬 경계상자
+          side_min_mm: 12
+          mbr_area_min_mm2: 144
+          axis_aligned: true
+          # 설계 권고 — KS X 9211:2025 §5.6.2. 누름 '부위'의 실제 면적에 걸린다
+          pressable_area_advisory_mm2: 150
+        logic_ref: "calc/geometry.py:check_mbr"
+        ks_ref: ["KS X 9211:2025 §5.6.2", "트리아지 원본 38행"]
+        triage_ref: "버튼 및 키의 표면 크기 (전문 실측 필수) / 원본 38행·실측"
+        remedy: { type: SW, difficulty: 낮음, cost_band: 1 }
+        notes: >-
+          144mm² 와 150mm² 는 불일치가 아니라 서로 다른 것을 재는 두 기준이다
+          (2026-08-21 원문 대조로 확정).
+          별표5 1.c 는 '최소경계상자(축 정렬)'에 각 변 12mm·면적 144mm² 를 건다.
+          KS X 9211:2025 §5.6.2 는 '손가락으로 누르는 부위'에 면적 150mm²·한 변 12mm 를
+          건다(참고 BS EN 1332-3:2008, 5.3.1).
+          따라서 (1) 별표5의 144mm² 는 독립 제약이 아니다 — 축 정렬 경계상자는 두 변이
+          모두 12mm 이상이면 면적이 반드시 144mm² 이상이므로 실질 구속 조건은 12mm 변이다.
+          (2) KS 가 더 엄격하다 — 누름 면적은 경계상자보다 작고, 지름 12mm 원형 버튼은
+          경계상자 144mm² 로 별표5를 통과하지만 누름 면적 113mm² 로 KS 150 에 못 미친다.
+          엔진은 두 값을 따로 계산하고, 리포트는 법적 판정(별표5)과 설계 권고(KS)를
+          분리해 인쇄한다. KS 수치는 판정이 아니라 권고임을 명시한다.
+
+      - id: "1.d"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "버튼을 누르는 데 힘이 세게 들면 안 됩니다 (2.26kg 이하)"
+        criterion: >-
+          모든 작동부는 2.26 kgF(22.2 N) 이하의 힘으로 누르거나, 잡아당기거나,
+          밀어서 조작할 수 있어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: C_MEASURE
+        ai_role: none
+        ai_verdict_scope: none
+        final_by: MEASURE
+        evidence: []
+        marker_required: false
+        params: { force_max_n: 22.2, force_max_kgf: 2.26 }
+        instrument: "푸시풀 게이지 (0.1N 분해능)"
+        ks_ref: ["KS X 9211:2025 §7", "트리아지 원본 50행"]
+        triage_ref: "사용자 컨트롤 조작 힘 (전문 실측 필수) / 원본 50행·장비"
+        remedy: { type: HW, difficulty: 높음, cost_band: 3 }
+        notes: "촬영물로는 어떤 추정도 하지 않는다. 리포트에 '실측 대상'으로만 인쇄한다."
+
+      - id: "1.e"
+        scope: 물건 투입
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "카드·지폐를 넣는 구멍이 넣기 쉬운 모양이어야 합니다"
+        criterion: >-
+          카드, 지폐, 동전, 상품권, 고지서 등을 투입하기 위한 투입구는
+          투입이 원활한 형태로 제공되어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S3]
+        marker_required: false
+        params: {}
+        detect:
+          signals:
+            - "투입 방향 표시(화살표·픽토그램·음각) 유무"
+            - "투입구 진입부의 모따기·가이드 형상"
+            - "투입구와 주변 면의 시각적 대비"
+        ks_ref: ["KS X 9211:2025 §7", "트리아지 원본 54행"]
+        triage_ref: "매체 삽입구 및 배출구 구조 추정 (Vision AI + Spatial Vision AI) / 원본 54~56행"
+        remedy: { type: HW, difficulty: 중간, cost_band: 2 }
+
+      - id: "1.f"
+        scope: 물건 투입
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "물건을 거꾸로 넣으면 화면과 소리로 알리고 도로 내보내야 합니다"
+        criterion: >-
+          무인정보단말기에 카드, 지폐, 동전, 상품권, 고지서 등이 올바르지 않은 방향으로
+          투입되었을 경우(이하 "투입오류"라 한다), 해당 사실을 시각적 및 청각적 방법으로
+          안내하고 해당 물건을 배출하여야 한다.
+        verdict:
+          base: 적합/부적합
+          grade:
+            우수: "투입오류가 발생한 사실과 투입오류의 내용을 안내하는 경우"
+            보통: "투입오류가 발생한 사실만 안내하는 경우"
+        track: B_OWNER
+        ai_role: none
+        ai_verdict_scope: none
+        final_by: OWNER
+        evidence: [S2]
+        marker_required: false
+        params: {}
+        owner_question: >-
+          카드나 지폐를 일부러 반대 방향으로 넣었을 때, 화면과 소리로 함께 안내가 나오고
+          해당 물건이 다시 나옵니까? (예 / 아니오 / 해당 없음)
+        ks_ref: ["KS X 9211:2025 §7"]
+        triage_ref: "매체 삽입구 및 배출구 사용성 분석 / 원본 54~56행"
+        remedy: { type: SW, difficulty: 중간, cost_band: 2 }
+        optional_ai_screen:
+          shot: S2-05
+          ai_role: screen
+          ai_verdict_scope: fail_only
+          note: >-
+            S2-05(오투입 재현) 컷이 제출된 경우에만 AI가 1차 스크리닝한다.
+            시각 안내와 청각 안내가 함께 났는지, 매체가 배출됐는지를 본다.
+            위반 신호를 잡으면 '위반 의심'으로 올리고, 신호가 없어도 적합을 확정하지 않는다.
+        notes: >-
+          트랙 확정(2026-08-22) — B_OWNER 유지.
+          실물 매체를 일부러 잘못 넣는 행위는 매체 걸림·리더 손상 위험이 있어
+          조사원이 임의로 수행할 수 없다. 점주 동의와 입회가 필요하므로
+          기본 판정 주체는 점주다.
+          다만 점주가 동의해 S2-05 재현 컷을 촬영한 경우에는 AI가 1차 스크리닝을 수행한다
+          (optional_ai_screen 참조). 이때도 최종 확정은 점주 응답이 한다 —
+          영상 한 컷으로는 '모든 매체·모든 방향'을 확인할 수 없기 때문이다.
+
+      - id: "1.g"
+        scope: 스캐너
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "QR·바코드 스캐너에 물건을 갖다 대기 쉬워야 합니다"
+        criterion: >-
+          QR코드·바코드·신분증 등의 정보를 처리하기 위한 고정식 스캐너는
+          스캔할 대상물을 쉽게 인식시킬 수 있는 형태로 제공되어야 한다.
+        verdict:
+          base: 적합/부적합
+          grade:
+            우수: "스캐너의 인식 방법에 대한 음성 안내가 함께 제공되는 경우"
+            보통: "스캐너의 인식 방법에 대한 음성 안내가 함께 제공되지 않는 경우"
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S3, S5]
+        marker_required: false
+        params: {}
+        ks_ref: ["KS X 9211:2025 §7"]
+        triage_ref: "사용자 컨트롤 레이블 제공 (Vision AI + OCR + Speech AI) / 원본 43행"
+        remedy: { type: SW, difficulty: 낮음, cost_band: 1 }
+        notes: "우수/보통 등급은 S5 음성 녹음에 스캐너 안내 멘트가 있는지로 가른다."
+
+      - id: "1.h"
+        scope: 지문 인식
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "지문 인식기에 손가락을 올리기 쉬운 모양이어야 합니다"
+        criterion: >-
+          지문 인식 장치는 손가락을 바른 위치에 손쉽게 올려놓을 수 있는 형태로
+          제공되어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: screen
+        ai_verdict_scope: fail_only
+        final_by: REVIEWER
+        evidence: [S3]
+        marker_required: false
+        params: {}
+        ks_ref: ["KS X 9211:2025 §7"]
+        triage_ref: "-"
+        remedy: { type: HW, difficulty: 중간, cost_band: 2 }
+
+      - id: "1.i"
+        scope: 배출물
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "영수증이 20mm 이상 나와서 잡기 쉽고, 떨어지지 않아야 합니다"
+        criterion: >-
+          배출구는 영수증, 티켓, 인쇄물 등의 배출물을 쉽게 받을 수 있고, 유실되지 않도록
+          설계되어야 한다. 배출물이 한 장인 경우에는 배출물을 잡을 수 있도록 최소 20mm 이상
+          배출하고 배출물이 유실되지 않도록 고정하여야 하며, 배출물이 여러 장인 경우에는
+          배출물이 튕겨 나가지 않고 담길 수 있도록 충분한 크기와 깊이를 갖춘 받침대로
+          배출되어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: C_MEASURE
+        ai_role: measure
+        ai_verdict_scope: fail_only
+        final_by: MEASURE
+        evidence: [S2, S3]
+        marker_required: true
+        params:
+          single_sheet_protrusion_min_mm: 20
+          retrieval_force_max_n: 22.2
+        logic_ref: "calc/protrusion.py"
+        instrument: "자·푸시풀 게이지"
+        ks_ref: ["KS X 9211:2025 §7", "트리아지 원본 55~56행"]
+        triage_ref: "배출 매체 돌출 길이 및 인출 힘 (전문 실측 필수) / 원본 55~56행·장비"
+        remedy: { type: HW, difficulty: 중간, cost_band: 2 }
+
+  # ===========================================================================
+  - area: 2
+    name: "반응시간 보완"
+    items:
+
+      - id: "2.a"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "저절로 바뀌는 화면을 사용자가 멈출 수 있어야 합니다"
+        criterion: >-
+          자동으로 변경되는 콘텐츠를 사용하는 경우, 사용자가 그 움직임을
+          제어할 수 있어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S2]
+        marker_required: false
+        params: {}
+        detect:
+          signals:
+            - "사용자 조작 없이 전환되는 배너·캐러셀·자동 스크롤 검출"
+            - "일시정지·이전·다음 컨트롤 존재 여부"
+        ks_ref: ["KS X 9211:2025 §6"]
+        triage_ref: "자동 갱신 및 자동 음성 재생 방지 (Video Analysis AI + UI Flow AI) / 원본 64·74행"
+        remedy: { type: SW, difficulty: 낮음, cost_band: 1 }
+
+      - id: "2.b"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "시간이 끝나기 20초 전에 알리고, 시간을 늘릴 수 있어야 합니다"
+        criterion: >-
+          사용자의 조작이 필요한 경우 충분한 시간 제한(timeout)을 두어야 하고,
+          제한 시간이 만료되기 최소 20초 전에는 만료 예정 알림과 연장 방법이
+          제공되어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S2]
+        marker_required: false
+        params: { warning_lead_time_min_sec: 20 }
+        capture_note: "S2 영상에 타임아웃 대기 구간을 반드시 포함해야 판정이 성립한다."
+        ks_ref: ["KS X 9211:2025 §6", "트리아지 원본 82~85행"]
+        triage_ref: "제한 시간·연장·초기화 기능 (UI Flow AI) / 원본 82~85행"
+        remedy: { type: SW, difficulty: 낮음, cost_band: 1 }
+
+  # ===========================================================================
+  - area: 3
+    name: "시력 보완 및 대체"
+    items:
+
+      - id: "3.a"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "화면에 보이는 모든 안내를 소리로도 들을 수 있어야 합니다"
+        criterion: >-
+          화면상의 모든 필수적인 시각적 정보(무인정보단말기 이용에 필요한 시각적 정보를
+          말한다. 이하 같다)는 이를 대체할 수 있는 수준의 청각적 정보로도 제공되어야 한다.
+          이 경우 청각적 정보를 제공하는 기능은 사용자의 선택에 따라 활성화되거나
+          비활성화될 수 있어야 한다.
+        verdict:
+          base: 적합/부적합
+          grade:
+            우수: "청각적 정보가 제공되는 동안 시각적 정보를 함께 사용할 수 있는 경우"
+            보통: "청각적 정보가 제공되는 동안 시각적 정보를 함께 사용할 수 없는 경우"
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S1, S5]
+        marker_required: false
+        params: {}
+        detect:
+          method: "S1 화면 OCR 텍스트와 S5 음성 STT 전사를 항목 단위로 대조"
+        ks_ref: ["KS X 9211:2025 §5.2.2", "트리아지 원본 16~18행"]
+        triage_ref: "시각정보의 청각 대체 콘텐츠 (Multimodal AI) / 원본 16~18행"
+        remedy: { type: SW, difficulty: 높음, cost_band: 3 }
+        exemptible_by: [무인민원발급기_표준규격]
+
+      - id: "3.b"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "이어폰을 꽂을 수 있고, 꽂으면 스피커 소리가 꺼져야 합니다"
+        criterion: >-
+          별도의 개인청취장치(Personal listening device)를 연결할 수 있는 단자 또는
+          연결 기능이 제공되어야 하며, 음량조절이 가능해야 한다. 개인청취장치가 연결된
+          후에는 개인청취장치를 통한 청각적 정보 제공이 활성화되는 동시에
+          무인정보단말기의 스피커를 통한 청각적 정보 제공은 비활성화 되어야 한다.
+        verdict:
+          base: 적합/부적합
+          grade:
+            우수: "개인청취장치 연결 수단으로 3.5mm단자, USB-C타입 단자, 근거리무선통신(블루투스) 연결 기능 중 두 가지 이상을 제공하는 경우"
+            보통: "개인청취장치 연결 수단으로 3.5mm단자, USB-C타입 단자, 근거리무선통신(블루투스) 연결 기능 중 한 가지만 제공하는 경우"
+        track: B_OWNER
+        ai_role: screen
+        ai_verdict_scope: none
+        final_by: OWNER
+        grade_by: A_AI
+        evidence: [S3, S5]
+        marker_required: false
+        params:
+          connection_types: ["3.5mm", "USB-C", "Bluetooth"]
+          grade_excellent_min_count: 2
+        owner_question: >-
+          이어폰을 꽂으면 외부 스피커 소리가 즉시 멈추고 이어폰으로만 들립니까?
+          그리고 음량 조절이 됩니까? (예 / 아니오)
+        ks_ref: ["KS X 9211:2025 §8", "트리아지 원본 57~58행"]
+        triage_ref: "개인청취장치 연결 및 스피커 출력 차단 (점주 체크리스트 필수) / 원본 57~58행"
+        remedy: { type: HW, difficulty: 중간, cost_band: 2 }
+        exemptible_by: [무인민원발급기_표준규격]
+        notes: >-
+          단자 종류의 개수(우수/보통)는 S3 사진으로 AI가 셀 수 있으나,
+          연결 시 스피커 차단 동작은 실제로 꽂아봐야 알 수 있어 기본 판정은 점주 몫이다.
+
+      - id: "3.c"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "음성 안내를 멈추거나 다시 들을 수 있어야 합니다"
+        criterion: >-
+          시각적 정보를 대체하는 청각적 정보는 사용자의 선택에 따라 중단하거나
+          다시듣기를 할 수 있어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S2, S5]
+        marker_required: false
+        params: {}
+        ks_ref: ["KS X 9211:2025 §5.2.2", "트리아지 원본 32행"]
+        triage_ref: "음량 조절 및 음성 재생 중단 기능 (UI Flow AI + System Event API) / 원본 26·28·32행"
+        remedy: { type: SW, difficulty: 낮음, cost_band: 1 }
+
+      - id: "3.d"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "화면을 만지지 않고 키패드로도 모두 고를 수 있어야 합니다"
+        criterion: >-
+          터치스크린에서 선택 가능한 모든 시각적 정보는 무인정보단말기의 자판(소형제품의
+          경우 별도로 유·무선 자판을 연결하는 경우엔 해당 유·무선 자판을 무인정보단말기의
+          자판에 해당하는 것으로 본다. 이하 같다)으로도 선택할 수 있어야 한다.
+        verdict:
+          base: 적합/부적합
+          grade:
+            우수: "터치스크린에서 선택 가능한 모든 시각적 정보를 선택할 수 있는 자판이 제공되며, 그 외에도 간단한 제스처(왼쪽/오른쪽 쓸기, 더블탭 등)로 정보 탐색과 선택이 가능하도록 구현하고 사전에 사용법을 안내하는 경우"
+            보통: "터치스크린에서 선택 가능한 모든 시각적 정보를 선택할 수 있는 자판이 제공되는 경우"
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: fail_only
+        final_by: REVIEWER
+        evidence: [S1, S2, S3]
+        marker_required: false
+        params: {}
+        ks_ref: ["KS X 9211:2025 §6", "트리아지 원본 36·66~71행"]
+        triage_ref: "키보드 내비게이션 및 초점 제어 (UI Flow AI) / 원본 36·66~71행"
+        remedy: { type: SW, difficulty: 높음, cost_band: 3 }
+        exemptible_by: [무인민원발급기_표준규격]
+        notes: >-
+          '모든 시각적 정보'의 전수 확인은 촬영 범위에 의존한다.
+          S1이 주요 플로우 전 단계를 담지 못하면 적합을 선언하지 않는다.
+
+      - id: "3.e"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "키패드로 옮겨 다닐 때 순서가 자연스럽고, 지금 어디인지 보여야 합니다"
+        criterion: >-
+          자판에 의한 초점 이동은 사용자가 쉽게 이해할 수 있도록 논리적인 순서와 방향으로
+          이동되어야 한다. 이때 자판의 초점이 안내창과 같은 특정 영역에 고정되어 정상적인
+          이동에 방해가 되어서는 안 되며, 초점이 위치한 곳이 시각적으로 표시되어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S2]
+        marker_required: false
+        params: {}
+        detect:
+          signals:
+            - "초점 이동 순서가 시각적 배치 순서와 어긋나는 구간"
+            - "초점 표시(테두리·배경 변화)의 유무와 명도 대비"
+            - "특정 영역에서 초점이 빠져나오지 못하는 구간(포커스 트랩)"
+        ks_ref: ["KS X 9211:2025 §6", "트리아지 원본 66~71행"]
+        triage_ref: "키보드 내비게이션 및 초점 제어 (UI Flow AI) / 원본 36·66~71행"
+        remedy: { type: SW, difficulty: 중간, cost_band: 2 }
+
+      - id: "3.f"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "키패드 5번 키에 손으로 만져지는 돌기가 있어야 합니다"
+        criterion: >-
+          자판은 기준점에 돌기 표시(점자 또는 양각을 말한다. 이하 같다)를 붙여
+          촉각으로 위치와 배열이 파악될 수 있어야 한다.
+        verdict:
+          base: 적합/부적합
+          grade:
+            우수: "자판의 모든 버튼에 돌기 표시를 제공하였거나, 기준점에만 돌기 표시를 제공하되 버튼 배열을 음성으로 자세히 안내하는 경우"
+            보통: "기준점에만 돌기 표시를 제공하는 경우"
+        track: B_OWNER
+        ai_role: screen
+        ai_verdict_scope: fail_only
+        final_by: OWNER
+        evidence: [S3, S5]
+        marker_required: false
+        params: { reference_key: "숫자 5" }
+        owner_question: >-
+          키패드의 숫자 5번 키와 기능 키에 손으로 만져 알 수 있는 돌기나 점자가 있습니까?
+          (예 / 아니오 / 해당 없음)
+        ks_ref: ["KS X 9211:2025 §7", "트리아지 원본 46~48행"]
+        triage_ref: "키패드 배열 및 촉각 레이블 (점주 체크리스트 필수) / 원본 46~47행"
+        remedy: { type: HW, difficulty: 낮음, cost_band: 1 }
+        notes: "촉각은 사진으로 확인되지 않는다. 고해상 접사에서 돌기가 아예 안 보이면 위반 의심만 올린다."
+
+      - id: "3.g"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "화면 글씨가 7.25mm 이상으로 커야 합니다"
+        criterion: >-
+          모든 필수적인 문자는 문자 높이가 7.25mm 이상이 되도록 표시되어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: C_MEASURE
+        ai_role: measure
+        ai_verdict_scope: fail_only
+        final_by: MEASURE
+        evidence: [S1]
+        marker_required: true
+        params:
+          char_height_min_mm: 7.25
+          exclude: ["비디오 캡션"]
+        logic_ref: "calc/text_height.py"
+        ks_ref: ["KS X 9211:2025 §5.2.3 a)", "트리아지 원본 19행"]
+        triage_ref: "텍스트 문자 높이 (전문 실측 필수) / 원본 19행·실측"
+        remedy: { type: SW, difficulty: 낮음, cost_band: 1 }
+        notes: >-
+          OCR 바운딩 박스의 높이는 글자 상자이지 문자 높이가 아니다.
+          대문자·한글 기준선 높이로 보정하는 계수를 logic_ref에 명시하고,
+          실측 표본으로 계수를 교정한 뒤에만 수치를 리포트에 낸다.
+
+      - id: "3.h"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "글씨를 2배까지 키울 수 있고, 키워도 내용이 잘리지 않아야 합니다"
+        criterion: >-
+          화면으로 제공되는 모든 필수적인 문자는 200%까지 확대될 수 있어야 하며,
+          문자 확대에 따라 콘텐츠나 기능이 손실되지 않아야 한다.
+        verdict:
+          base: 적합/부적합
+          grade:
+            우수: "문자를 포함해 화면의 모든 시각적 정보(버튼, 이미지 등 포함)를 확대할 수 있는 경우"
+            보통: "문자만 확대할 수 있는 경우"
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S1]
+        marker_required: false
+        params: { zoom_target_percent: 200 }
+        capture_note: "동일 화면을 기본 상태와 확대 상태로 각각 촬영해야 판정이 성립한다."
+        ks_ref: ["KS X 9211:2025 §5.2.3 b)", "트리아지 원본 20행"]
+        triage_ref: "텍스트 크기 및 확대 기능 (OCR + Vision AI + UI Flow AI) / 원본 19~20행"
+        remedy: { type: SW, difficulty: 중간, cost_band: 2 }
+        exemptible_by: [무인민원발급기_표준규격]
+
+      - id: "3.i"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "글씨와 배경 색이 충분히 차이 나야 합니다 (4.5배 이상)"
+        criterion: >-
+          모든 화면에 대해 필수적인 문자와 배경 간 4.5:1 이상의 명도 대비를 이루도록
+          하여야 한다. 다만 순수한 장식용 시각적 정보, 로고 등은 예외로 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: measure
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S1]
+        marker_required: false
+        params:
+          contrast_min: 4.5
+          formula: "WCAG relative luminance (L1+0.05)/(L2+0.05)"
+          exclude: ["순수 장식용 시각 정보", "로고"]
+        logic_ref: "calc/contrast.py"
+        ks_ref: ["KS X 9211:2025 §5.2.5", "트리아지 원본 22~23행"]
+        triage_ref: "텍스트·기능 키 명도 대비 (OCR + Vision AI) / 원본 22~23행"
+        remedy: { type: SW, difficulty: 낮음, cost_band: 1 }
+        notes: >-
+          이 사업에서 신뢰도가 가장 높은 항목이다. 마커도 실측도 필요 없고 수식이 확정적이다.
+          단 촬영 색보정(화이트밸런스·감마)이 값을 흔들므로 S1은 무보정 원본을 함께 저장한다.
+          기존 BUILD_SPEC의 packages/core 대비 계산 모듈을 그대로 재사용한다.
+
+      - id: "3.j"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "색 차이를 더 키운 화면을 사용자가 켤 수 있어야 합니다 (7배 이상)"
+        criterion: >-
+          모든 화면에 대해 필수적인 문자와 배경 간 7:1 이상의 명도 대비가 갖춰진
+          고대비(高對比) 화면이 제공되어야 하며, 사용자가 이를 쉽게 활성화할 수 있어야 한다.
+          다만 기본 화면이 전단의 조건을 갖춘 경우에는 별도의 고대비 화면이 제공될 필요는 없다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: measure
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S1]
+        marker_required: false
+        params: { contrast_min: 7.0 }
+        logic_ref: "calc/contrast.py"
+        capture_note: "고대비 모드가 있으면 해당 상태의 화면도 S1에 포함한다."
+        ks_ref: ["KS X 9211:2025 §5.2.5", "트리아지 원본 23행"]
+        triage_ref: "고대비 화면 또는 고대비 모드 제공 (AI 권유사항) / 원본 23행"
+        remedy: { type: SW, difficulty: 중간, cost_band: 2 }
+
+      - id: "3.k"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "물리 버튼이 손으로 만져지고, 점자와 음성 안내가 있어야 합니다"
+        criterion: >-
+          물리적 작동부는 손으로 위치를 찾을 수 있도록 주변보다 볼록하거나 오목하여야 하며,
+          그 위치와 내용을 알 수 있도록 음성 안내와 점자 표시를 제공하여야 한다.
+          다만, 무인정보단말기와 연결된 외부 유·무선 자판은 음성 안내와 점자 표시를
+          제공하지 않을 수 있다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: B_OWNER
+        ai_role: screen
+        ai_verdict_scope: fail_only
+        final_by: OWNER
+        evidence: [S3, S5]
+        marker_required: false
+        params: {}
+        owner_question: >-
+          물리 버튼이 손으로 만져서 구분될 만큼 튀어나오거나 들어가 있습니까?
+          그리고 그 옆에 점자 표시가 있습니까? (예 / 아니오 / 해당 없음)
+        ks_ref: ["KS X 9211:2025 §7", "트리아지 원본 48행"]
+        triage_ref: "버튼 및 키의 돌출 구조 (점주 체크리스트 필수) / 원본 48행"
+        remedy: { type: HW, difficulty: 중간, cost_band: 2 }
+        exemptible_by: [무인민원발급기_표준규격]
+
+  # ===========================================================================
+  - area: 4
+    name: "색상 식별능력 보완"
+    items:
+
+      - id: "4.a"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "색깔로만 구분하게 하면 안 됩니다"
+        criterion: >-
+          모든 시각적 정보는 색을 인식하지 못해도 이용할 수 있는 방법이 제공되어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S1]
+        marker_required: false
+        params: {}
+        detect:
+          method: "색상 채널 제거본(그레이스케일·색각 시뮬레이션)과 원본을 대조해 구별 소실 요소 검출"
+          signals:
+            - "색만으로 구분되는 상태 표시(선택/비선택, 정상/오류)"
+            - "색 이름으로만 지시하는 문구(빨간 버튼을 누르세요)"
+        ks_ref: ["KS X 9211:2025 §5.2.4", "트리아지 원본 21행"]
+        triage_ref: "색상 정보의 독립성 (Vision AI) / 원본 21행"
+        remedy: { type: SW, difficulty: 낮음, cost_band: 1 }
+
+  # ===========================================================================
+  - area: 5
+    name: "청력 보완 및 대체"
+    items:
+
+      - id: "5.a"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "소리로 알리는 내용은 화면으로도 보여야 합니다"
+        criterion: >-
+          소리로 제공되는 모든 정보는 시각적 대체 정보(문자, 이미지, 지시등의 깜박임 등)와
+          함께 제공되어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S1, S2, S5]
+        marker_required: false
+        params: {}
+        detect:
+          method: "S5 음성 이벤트 타임라인과 S2 동일 시각의 화면 변화를 대조"
+        ks_ref: ["KS X 9211:2025 §5.3", "트리아지 원본 25행"]
+        triage_ref: "청각정보의 시각 대체 콘텐츠 (Speech AI + OCR) / 원본 25행"
+        remedy: { type: SW, difficulty: 중간, cost_band: 2 }
+
+      - id: "5.b"
+        scope: 보조 기능
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "점자·수어 같은 보조 기능이 있다면 음성과 같은 내용이어야 합니다"
+        criterion: >-
+          점자 디스플레이, 수어 영상 등 음성 안내를 보조하는 기능이 제공될 경우,
+          출력되는 정보와 속도, 제어 기능 등이 음성과 동일하게 제공되어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S1, S2, S5]
+        marker_required: false
+        params: {}
+        ks_ref: ["KS X 9211:2025 §5.3", "트리아지 원본 63·65행"]
+        triage_ref: "화면 해설 및 자막·수어 제공 (Speech AI + OCR) / 원본 63·65행"
+        remedy: { type: SW, difficulty: 높음, cost_band: 3 }
+
+      - id: "5.c"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "음량을 충분히 키울 수 있고, 쓰고 나면 저절로 낮아져야 합니다"
+        criterion: >-
+          무인정보단말기의 스피커는 사용자가 직접 음량을 65dBA 이상으로 조절하거나
+          음소거할 수 있어야 하고, 사용 후에는 자동으로 65dBA 미만으로 초기화되어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: C_MEASURE
+        ai_role: none
+        ai_verdict_scope: none
+        final_by: MEASURE
+        owner_check: true
+        evidence: [S5]
+        marker_required: false
+        params:
+          # 법적 판정
+          spl_max_min_dba: 65
+          reset_below_dba: 65
+          # 설계 권고 — EN 301 549 (판정 아님)
+          range_advisory_db: 18       # §8.2.1.1 음량 조절 범위
+          mid_step_advisory_db: 12    # §8.2.1.2 단계식 제어의 중간 단계
+          # 측정 조건 — 표준이 비워 둔 자리를 본 SOP 가 정의한다
+          sop_distance_mm: 300
+          sop_ear_height_standing_mm: 1500
+          sop_ear_height_wheelchair_mm: 1150
+          sop_verdict_rule: "두 측정점 중 낮은 값"
+          sop_weighting: "A"
+          sop_time_weighting: "FAST"
+          sop_repeats: 3
+          sop_background_negligible_delta_db: 10
+          sop_background_invalid_delta_db: 3
+        logic_ref: "calc/sound.py:check_volume"
+        instrument: "적분형 소음계 (A특성, FAST) — 측정 조건은 measurement-sop.yaml 참조"
+        owner_question: >-
+          이용이 끝난 뒤 다음 사람이 왔을 때 음소거가 풀려 있고 음량이 원래대로
+          돌아와 있습니까? (예 / 아니오)
+        ks_ref: ["KS X 9211:2025 §8", "트리아지 원본 27·29~31행"]
+        triage_ref: "스피커 음량 및 조절 범위 (전문 실측 필수) / 원본 27·30~31행·장비"
+        remedy: { type: SW, difficulty: 낮음, cost_band: 1 }
+        notes: >-
+          측정 조건 확정(2026-08-22) — 표준 체인 어디에도 측정 거리 규정이 없음을 확인했다.
+          별표5 5.c 없음. KS X 9211 §5.3.3 b) 없음(비고 4는 dBA 정의만).
+          KS 가 참조하는 EN 301 549 V3.2.1 §5.1.3.12 도 "at least 65 dBA (-29 dBPaA)" 로
+          음압 기준점만 고정하고 측정 지점을 규정하지 않는다.
+          따라서 본 SOP 가 측정점을 정의하고, 측정 조건을 리포트에 함께 인쇄한다 —
+          조건 없이 인쇄된 dBA 값은 재현되지 않기 때문이다.
+          권고 수치의 출처도 확정했다: 18dB 범위는 EN §8.2.1.1, 12dB 중간 단계는 EN §8.2.1.2.
+          둘 다 판정이 아니라 권고이므로 리포트에 그렇게 표기한다.
+
+  # ===========================================================================
+  - area: 6
+    name: "음성 입력 대체"
+    items:
+
+      - id: "6.a"
+        scope: 음성 입력
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "음성으로만 입력하게 하면 안 되고 다른 방법도 있어야 합니다"
+        criterion: >-
+          음성 입력을 요구하는 경우, 음성 입력을 대체할 수 있는 수단이 제공되어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S1, S2]
+        marker_required: false
+        params: {}
+        ks_ref: ["KS X 9211:2025 §6", "트리아지 원본 8행"]
+        triage_ref: "발성을 요구하지 않는 대체 입력 방식 (UI Flow AI + Vision AI + OCR) / 원본 8행"
+        remedy: { type: SW, difficulty: 중간, cost_band: 2 }
+
+  # ===========================================================================
+  - area: 7
+    name: "인지능력 보완"
+    items:
+
+      - id: "7.a"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "언제든 취소하고 되돌릴 수 있어야 하며, 넣은 물건을 돌려받아야 합니다"
+        criterion: >-
+          사용자가 언제든지 입력 또는 실행을 취소하거나, 이전 단계 또는 초기 상태로
+          되돌릴 수 있어야 한다. 또한, 이전 단계나 초기 상태로 되돌릴 때는 입력된 정보가
+          삭제되어야 하고 삽입된 카드, 지폐, 동전, 상품권, 고지서 등을 회수할 수 있어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: fail_only
+        final_by: REVIEWER
+        evidence: [S1, S2]
+        marker_required: false
+        params: {}
+        ks_ref: ["KS X 9211:2025 §6", "트리아지 원본 82~86행"]
+        triage_ref: "제한 시간·연장·초기화 기능 (UI Flow AI) / 원본 82~85행"
+        remedy: { type: SW, difficulty: 중간, cost_band: 2 }
+        notes: "매체 회수 동작은 실물 투입이 필요하므로 적합 확정은 검토자가 점주 확인과 함께 내린다."
+
+      - id: "7.b"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "버튼을 누르면 화면뿐 아니라 소리나 진동으로도 반응해야 합니다"
+        criterion: >-
+          사용자 조작에 대한 반응은 시각 방식과 함께 청각 또는 촉각 방식이 제공되거나
+          청각과 촉각을 병행한 방식이 제공되어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S2, S5]
+        marker_required: false
+        params: {}
+        ks_ref: ["KS X 9211:2025 §6", "트리아지 원본 79~80행"]
+        triage_ref: "조작 피드백 및 오류 안내 (Vision AI + Speech AI + UI Flow AI) / 원본 79~80행"
+        remedy: { type: SW, difficulty: 낮음, cost_band: 1 }
+
+      - id: "7.c"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "화면 구성이 단순하고, 화면마다 같은 자리에 있어야 합니다"
+        criterion: >-
+          모든 설계 요소는 사용자가 논리적으로 쉽게 이해할 수 있도록 단순하고
+          일관성 있게 배치되어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S1]
+        marker_required: false
+        params: {}
+        detect:
+          method: "화면 간 동일 기능 요소의 위치·레이블·형태 일관성 대조"
+        ks_ref: ["KS X 9211:2025 §6", "트리아지 원본 75~76행"]
+        triage_ref: "UI 일관성 및 논리적 구성 (Vision AI + UI Flow AI) / 원본 75~76행"
+        remedy: { type: SW, difficulty: 중간, cost_band: 2 }
+
+      - id: "7.d"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "화면이 바뀐 것을 알 수 있고, 이전 화면으로 돌아갈 수 있어야 합니다"
+        criterion: >-
+          화면 전환이나 새로운 이벤트는 사용자가 현재 상태를 인지할 수 있는 방식으로
+          제공되어야 하며, 기존 화면으로 되돌릴 수 있는 방법이 제공되어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S1, S2]
+        marker_required: false
+        params: {}
+        ks_ref: ["KS X 9211:2025 §6", "트리아지 원본 86행"]
+        triage_ref: "이전 단계 이동 기능 (AI 권유사항) / 원본 86행"
+        remedy: { type: SW, difficulty: 낮음, cost_band: 1 }
+
+      - id: "7.e"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "도움을 요청할 연락처나 직원 호출 버튼이 있어야 합니다"
+        criterion: >-
+          사용자가 도움을 요청할 수 있도록 연락처를 명시하거나 직원을 호출할 수 있는
+          기능을 제공하여야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S1, S3]
+        marker_required: false
+        params: {}
+        ks_ref: ["KS X 9211:2025 §10"]
+        triage_ref: "사용 방법의 시각·비시각 안내 / 원본 96행"
+        remedy: { type: OPS, difficulty: 낮음, cost_band: 1 }
+        notes: "화면 내 호출 버튼뿐 아니라 기기 표면 인쇄물·안내판도 인정되므로 S3를 함께 본다."
+
+      - id: "7.f"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "그림 기호만 쓰지 말고 글자를 함께 적어야 합니다"
+        criterion: >-
+          기호로 표시된 정보는 문자와 함께 제공되어야 한다. 다만 국제표준·국가표준으로
+          정하거나 실생활에서 일반적으로 사용되어 일반인이 그 의미를 명확히 인식할 수 있는
+          기호의 경우에는 예외로 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S1]
+        marker_required: false
+        params:
+          exempt_symbols: ["국제표준 기호", "국가표준 기호", "실생활 통용 기호"]
+        ks_ref: ["KS X 9211:2025 §6", "트리아지 원본 89행"]
+        triage_ref: "텍스트와 그림·아이콘 병행 제공 (AI 권유사항) / 원본 89행"
+        remedy: { type: SW, difficulty: 낮음, cost_band: 1 }
+        notes: "예외 기호 판단은 확신도가 낮게 나오기 쉽다. 검토자 큐로 넘어갈 확률이 높은 항목."
+
+      - id: "7.g"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "누를 수 있는 버튼과 그냥 글씨가 확실히 구별되어야 합니다"
+        criterion: >-
+          기능이 부여된 작동부는 그 기능을 명확히 파악할 수 있어야 하고 기능이 부여되지
+          않은 문자나 이미지 등과 명확히 구별되어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S1]
+        marker_required: false
+        params: {}
+        ks_ref: ["KS X 9211:2025 §5.2.6", "트리아지 원본 61~62행"]
+        triage_ref: "콘텐츠 및 조작 가능한 UI 구분 (Vision AI) / 원본 61~62행"
+        remedy: { type: SW, difficulty: 낮음, cost_band: 1 }
+
+      - id: "7.h"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "어려운 한자어나 외래어 대신 쉬운 말을 써야 합니다"
+        criterion: >-
+          문자 정보는 어려운 관용구나 외래어의 사용을 지양하고 사용자가 이해하기 쉬운
+          용어를 사용하여야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S1]
+        marker_required: false
+        params: {}
+        detect:
+          method: "OCR 추출 문구를 LLM이 평가 — 전문용어·관용구·불필요한 외래어·문장 길이"
+        ks_ref: ["KS X 9211:2025 §6", "트리아지 원본 87~88행"]
+        triage_ref: "간결하고 단순한 언어 사용 (LLM 자연어 처리) / 원본 87~88행"
+        remedy: { type: SW, difficulty: 낮음, cost_band: 1 }
+
+  # ===========================================================================
+  - area: 8
+    name: "깜박임 사용 제한"
+    items:
+
+      - id: "8.a"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "화면이 1초에 3번 이상 깜박이면 안 됩니다"
+        criterion: >-
+          화면이나 장치에서 발생하는 깜박임은 초당 3회 미만으로 제한되어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: measure
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S2]
+        marker_required: false
+        params:
+          flash_max_per_sec: 3
+          comparison: "미만"
+        logic_ref: "calc/flash_rate.py"
+        capture_note: "S2는 30fps 이상으로 촬영한다. 24fps 이하면 3Hz 판정의 여유가 부족하다."
+        ks_ref: ["KS X 9211:2025 §5.2.7", "트리아지 원본 33행"]
+        triage_ref: "광과민성 발작 방지 (Video Analysis AI) / 원본 33행"
+        remedy: { type: SW, difficulty: 낮음, cost_band: 1 }
+
+  # ===========================================================================
+  - area: 9
+    name: "휠체어 사용자 접근"
+    items:
+
+      - id: "9.a"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "모든 버튼이 바닥에서 40cm ~ 122cm 사이에 있어야 합니다"
+        criterion: >-
+          모든 작동부는 바닥으로부터 400mm ~ 1,220mm 사이에 있어야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: C_MEASURE
+        ai_role: measure
+        ai_verdict_scope: fail_only
+        final_by: MEASURE
+        evidence: [S3]
+        marker_required: true
+        params: { height_min_mm: 400, height_max_mm: 1220 }
+        logic_ref: "calc/reach_height.py"
+        instrument: "줄자 / 레이저 거리계"
+        ks_ref: ["KS X 9211:2025 §11", "트리아지 원본 44행"]
+        triage_ref: "조작부 높이 및 휠체어 도달 범위 (전문 실측 필수) / 원본 44행·실측"
+        remedy: { type: OPS, difficulty: 높음, cost_band: 3 }
+        exemptible_by: [무인민원발급기_표준규격]
+        notes: >-
+          측면 촬영에 마커를 세워 두면 ±20mm 수준까지 추정할 수 있다.
+          경계값(400·1,220mm) 부근은 반드시 실측으로 확정한다.
+
+      - id: "9.b"
+        scope: 기본
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "화면의 중요한 내용이 바닥에서 140cm를 넘지 않아야 합니다"
+        criterion: >-
+          화면 상 모든 필수적인 시각적 정보는 바닥으로부터 1,400mm를 넘지 않아야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: C_MEASURE
+        ai_role: measure
+        ai_verdict_scope: fail_only
+        final_by: MEASURE
+        evidence: [S3]
+        marker_required: true
+        params: { height_max_mm: 1400 }
+        logic_ref: "calc/reach_height.py"
+        instrument: "줄자 / 레이저 거리계"
+        ks_ref: ["KS X 9211:2025 §11", "트리아지 원본 41행"]
+        triage_ref: "디스플레이 시인성 분석 (Vision AI) / 원본 41행"
+        remedy: { type: OPS, difficulty: 높음, cost_band: 3 }
+
+  # ===========================================================================
+  - area: 10
+    name: "개인정보 보호"
+    items:
+
+      - id: "10.a"
+        scope: 개인정보 입력
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "지문·홍채 말고 다른 인증 방법도 고를 수 있어야 합니다"
+        criterion: >-
+          사용자 식별이 필요한 경우, 지문·홍채 인식 등 생체 인식 이외의 선택 가능한
+          대체 인증 수단을 제공하여야 한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: both
+        final_by: REVIEWER
+        evidence: [S1, S2]
+        marker_required: false
+        params:
+          non_biometric_examples: ["아이디+비밀번호", "전자인증서", "휴대전화 본인인증"]
+        ks_ref: ["KS X 9211:2025 §9.2", "트리아지 원본 91행"]
+        triage_ref: "생체인식 대체 수단 제공 (UI Flow AI) / 원본 91행"
+        remedy: { type: SW, difficulty: 중간, cost_band: 2 }
+
+      - id: "10.b"
+        scope: 개인정보 입력
+        applies_to: [중대형, 소형]
+        # 점주용 리포트에 쓰는 쉬운 말. 원문은 아래 criterion 그대로 남는다.
+        plain: "개인정보를 스피커로 읽어 주면 안 됩니다 (이어폰은 예외)"
+        criterion: >-
+          개인정보는 음성으로 읽어주어서는 안된다. 다만, 개인청취장치를 연결한 경우는
+          제외한다.
+        verdict: { base: 적합/부적합, grade: null }
+        track: A_AI
+        ai_role: judge
+        ai_verdict_scope: fail_only
+        final_by: REVIEWER
+        owner_check: true
+        evidence: [S5]
+        marker_required: false
+        params: {}
+        detect:
+          method: "S5 미연결 녹음의 STT 전사에서 개인정보 패턴(성명·주민번호·카드번호·전화번호) 탐지"
+        owner_question: >-
+          민감한 정보를 음성으로 안내하는 중에 이어폰을 뽑으면, 그 소리가 외부 스피커로
+          넘어가지 않고 멈춥니까? (예 / 아니오 / 해당 없음)
+        ks_ref: ["KS X 9211:2025 §9.3.3", "트리아지 원본 58·94행"]
+        triage_ref: "개인청취장치 연결·분리 시 음성 출력 차단 (점주 체크리스트 필수) / 원본 58·94행"
+        remedy: { type: SW, difficulty: 중간, cost_band: 2 }
+        notes: >-
+          S5 녹음 자체에 개인정보가 담긴다. 업로드 전 단말에서 마스킹하고,
+          전사 결과는 패턴 탐지 결과만 남기고 원문을 저장하지 않는다.
+          (BUILD_SPEC §9 개인정보 처리 원칙)
+
+# -----------------------------------------------------------------------------
+# 별표5 2. 사용자 검증 기준 — Track D
+#   이 룰 DB는 사용자 검증을 판정하지 않는다. 실증 설계의 정답지로만 사용한다.
+# -----------------------------------------------------------------------------
+user_validation:
+  track: D_USER
+  ai_replaceable: false
+  note: "실험실 환경에서 준비된 시나리오로 주요 기능을 검증한다. 어떤 촬영·계측으로도 대체되지 않는다."
+
+  composition:
+    - { type: "비장애인(20~40대)",        min_count: 3 }
+    - { type: "전맹시각장애인",            min_count: 2 }
+    - { type: "저시력시각장애인",          min_count: 2 }
+    - { type: "휠체어사용 상지지체장애인", min_count: 1 }
+    - { type: "휠체어사용 뇌병변장애인",   min_count: 1 }
+    - { type: "청각·언어장애인",           min_count: 1 }
+    - { type: "고령자(65세 이상)",         min_count: 2 }
+  total_min_count: 12
+
+  metrics:
+    - id: 효과성
+      question: "무인정보단말기의 주요 기능을 모두 완수할 수 있는가?"
+      method: "총 시나리오 개수 중에서 최종 완수한 작업의 비율로 계산"
+      followup: "완수하지 못하는 작업에 대해 평가지침에 기반한 문제점 확인 필요"
+    - id: 효율성
+      question: "무인정보단말기의 주요 기능을 수행하는 데에 요구되는 노력이 과도하지 않은가?"
+      method: >-
+        각 시나리오에 소요되는 시간을 측정, 비장애인 사용자의 평균 작업 완료 시간과 비교,
+        비장애인 대비 3배 이상 오래 걸리는 작업의 비율을 계산
+      followup: "3배 이상 오래 걸리는 작업에 대해 평가지침에 기반한 문제점 확인 필요"
+    - id: 만족도
+      question: "무인정보단말기의 주요 기능을 수행하는 데에 있어서 접근성이 만족스러운가?"
+      method: "각 작업마다 5점 척도로 측정하여 전체 평균을 계산"
+      followup: "평균 3점 미만 작업에 대해 문제점 확인 및 인터뷰 조사 필요"
+
+  poc_reduced_panel:
+    note: >-
+      1차년도 예산으로 12명 전원 소집이 어려운 경우의 축소 구성.
+      축소 사실과 구성을 리포트에 반드시 명시한다. 축소 결과를 '별표5 사용자 검증 통과'로
+      표기하지 않는다.
+    composition:
+      - { type: "전맹시각장애인",   count: 1 }
+      - { type: "저시력시각장애인", count: 1 }
+      - { type: "휠체어사용자",     count: 1 }
+      - { type: "고령자(65세 이상)", count: 2 }
+      - { type: "비장애인(20~40대)", count: 2 }
+    total_count: 7
+
+# -----------------------------------------------------------------------------
+# 별표5 3. 설계지침 면제 검증 기준
+#   「행정사무정보처리용 무인민원발급기(KIOSK) 표준규격」 적합성평가를 통과하고
+#   그 결과를 제출할 경우, 대응 항목을 통과한 것으로 인정한다.
+# -----------------------------------------------------------------------------
+exemptions:
+  - id: 무인민원발급기_표준규격
+    source: "「행정사무정보처리용 무인민원발급기(KIOSK) 표준규격」 차. 장애인 편의 기능"
+    evidence_required: "적합성평가 통과 결과 제출"
+    exempts: ["3.a", "3.b", "3.d", "3.h", "3.k", "9.a"]
+    basis:
+      - "2. 각 화면의 안내메시지는 청각장애인을 위해 별도의 안내 기능(자막 등)을 제공하여야 하며, 시각장애인용 음성안내 기능도 제공해야 한다."
+      - "5. 음성지원시스템 이용자에 대한 이어폰 소켓을 제공하여야 한다."
+      - "1. 시각장애인용 Keypad(0~9까지의 숫자버튼, '취소'/'정정'/'확인' 버튼 포함)를 부착 및 제공하여야 한다."
+      - "6. 발급화면 하단에 '화면확대' 버튼을 제공하여 노인 및 저시력 사용자를 위한 별도의 발급화면으로 이동할 수 있어야 한다."
+      - "3. 시각장애인용 장치들은 정해진 위치(오른쪽 또는 중앙)에 장착되어야 하며, 외부에서 도난, 파손의 우려가 없도록 견고하게 설치되어야 한다."
+      - "4. 주요 조작부(키패드, 수수료 투입장치, 전자적 본인확인장치 등) 주변에 점자 표시(또는 점자라벨 부착 등)를 제공하여야 한다."
+      - "7. 휠체어를 탄 사용자가 앉은 채로 사용할 수 있도록 바닥면에서 400mm 이상 1,220mm 이하로 작동부를 부착하여야 한다."
+    note: >-
+      공공 민원 단말 진단 시 이 경로를 먼저 확인한다. 적용되면 40항목 중 6항목이
+      진단 범위에서 빠지고, 그중 3.a·3.d는 가장 비싼 SW 개선 항목이다.

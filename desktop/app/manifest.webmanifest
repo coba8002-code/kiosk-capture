@@ -1,0 +1,15 @@
+{
+  "name": "배리어프리 현장 수집",
+  "short_name": "현장수집",
+  "description": "무인정보단말기 접근성 진단을 위한 현장 촬영 수집 앱",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#EEF2F6",
+  "theme_color": "#0E2439",
+  "lang": "ko",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+node_modules/
+build/
+dist/
+assets/
+captures/
+uploads/
+*.key
+*.pem
+*.pfx
+*.p12
+.env
+.env.*
+*.log

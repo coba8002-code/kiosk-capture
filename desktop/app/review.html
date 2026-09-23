@@ -1,0 +1,53 @@
+<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>검토 · 실측 입력 | KFA</title>
+<style>
+body{margin:0;background:#f5f7fa;color:#172b3a;font:18px/1.65 system-ui,sans-serif}main{max-width:900px;margin:auto;padding:24px}button,input,select,textarea{font:inherit;min-height:48px;box-sizing:border-box}button{padding:8px 18px;cursor:pointer;background:#173c60;color:white;border:0;border-radius:8px}button:disabled{opacity:.6;cursor:wait}input,select,textarea{width:100%;padding:8px;border:1px solid #64748b;border-radius:4px}label{display:block;margin:12px 0}fieldset{margin:20px 0;padding:20px;border:1px solid #64748b;background:white}legend{font-weight:700}pre{white-space:pre-wrap;overflow-wrap:anywhere;font:16px/1.6 system-ui}#status{padding:12px 0}a{color:#173c60}:focus-visible{outline:3px solid #915300;outline-offset:3px}[hidden]{display:none}
+</style><main>
+<a id="back">처음 화면</a><h1>검토 · 실측 입력</h1>
+<p>촬영을 선택하고 담당자 이름과 확인 결과를 입력하세요. 저장한 뒤 보고서를 다시 만들 수 있습니다.</p>
+<div id="status" role="status" aria-live="polite"></div>
+<div id="picker"></div>
+<form id="form" hidden><h2 id="device"></h2>
+<label>검토자 이름<input id="reviewer" required maxlength="100" autocomplete="name"></label>
+<p>승인은 부적합 확정, 반려는 미판정입니다. 실측 결과는 측정 담당자가 기준과 측정 조건을 확인하여 선택합니다.</p>
+<div id="photos"></div><div id="fields"></div><button id="save" type="submit">검토 결과 저장</button></form>
+<button id="report" hidden>저장한 결과로 보고서 다시 만들기</button>
+<p>이 리포트는 법정 적합성 인증이 아닙니다.</p></main>
+<script>
+const T=new URLSearchParams(location.search).get('t');
+const $=id=>document.getElementById(id);let session,rows=[],target;
+$('back').href='/?t='+encodeURIComponent(T);
+async function api(path,body){const r=await fetch(path+'?t='+encodeURIComponent(T),body?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}:{});const d=await r.json();if(d.ok===false)throw Error(d.error);return d;}
+function message(s){$('status').textContent=s;}
+function element(tag,text){const e=document.createElement(tag);e.textContent=text;return e;}
+function field(parent,label,tag='input'){const l=element('label',label),i=document.createElement(tag);l.append(i);parent.append(l);return i;}
+function choice(parent,label,options){const s=field(parent,label,'select');for(const [value,text]of options){const o=element('option',text);o.value=value;s.append(o);}return s;}
+function check(parent,label){const i=field(parent,label);i.type='checkbox';i.style.width='32px';return i;}
+function numericRecord(r){const values={};for(const [key,input] of Object.entries(r.inputs)){if(!input.value.trim())throw Error('측정 숫자를 모두 입력하세요.');values[key]=Number(input.value);}return {method:'numeric/1',values,error_bound:r.error.value.trim()===''?null:Number(r.error.value),condition:r.condition.value,instrument:r.instrument.value,scope:r.scope.value,coverage_complete:r.coverage.checked,confirmed:r.confirmed.checked,by:$('reviewer').value};}
+function numericBox(item){
+const box=document.createElement('fieldset');box.append(element('legend',item.id+' '+item.title),element('p',item.criterion));
+if(Object.keys(item.previous).length)box.append(element('pre','기존 입력: '+JSON.stringify(item.previous,null,2)));
+const verdict=choice(box,'입력 방식',[['','기존 기록 유지'],['numeric','새 실측값으로 비교']]);
+const inputs={};for(const [key,label,unit]of item.numeric){const input=field(box,label+' ('+unit+')');input.type='number';input.step='any';input.min='0';inputs[key]=input;}
+const error=field(box,'측정 오차 한계 ± ('+item.numeric[0][2]+') — 모르면 비워 두세요');error.type='number';error.step='any';error.min='0';
+const condition=field(box,'측정 조건'),instrument=field(box,'장비 · 교정 정보 · 오차 한계의 근거'),scope=field(box,'검사한 화면·조작부 범위와 빠진 부분');
+const coverage=check(box,'해당 항목의 모든 대상·상태를 확인했습니다'),confirmed=check(box,'측정 담당자로서 입력값·조건·비교 결과를 확인했습니다');
+const r={id:item.id,kind:'numeric',verdict,inputs,error,condition,instrument,scope,coverage,confirmed};
+const button=element('button','기준과 비교하기'),output=element('p','오차·검사 범위·담당자 확인이 부족하면 미판정으로 남습니다.');button.type='button';output.setAttribute('role','status');
+button.onclick=async()=>{try{const d=await api('/review/compare',{id:r.id,record:numericRecord(r)});output.textContent=d.result['판정']+' · '+d.result['측정값']['비교 결과'];}catch(e){output.textContent=e.message;}};
+box.append(button,output);rows.push(r);$('fields').append(box);
+}
+async function openReview(path){
+ $('picker').hidden=true;message('촬영 자료를 분석하고 있습니다. 잠시 기다려 주세요.');
+ try{const d=await api('/review/load',{path});session=d.session;rows=[];$('fields').replaceChildren();$('device').textContent=d.device;$('reviewer').value=d.reviewer;
+ for(const item of d.pending){const box=document.createElement('fieldset');box.append(element('legend',item.id+' '+item.title),element('pre',JSON.stringify(item.evidence,null,2)));const verdict=choice(box,'검토 결정',[['','변경하지 않음'],['approve','승인 — 부적합 확정'],['reject','반려 — 미판정']]);rows.push({id:item.id,kind:'decision',verdict});$('fields').append(box);}
+ for(const item of d.measurements){if(item.numeric){numericBox(item);continue;}const box=document.createElement('fieldset');box.append(element('legend',item.id+' '+item.title),element('p',item.criterion));if(Object.keys(item.previous).length)box.append(element('pre','기존 입력: '+JSON.stringify(item.previous,null,2)));const verdict=choice(box,'측정 담당자의 판정',[['','변경하지 않음'],['pass','적합'],['fail','부적합'],['na','해당 없음']]);const value=field(box,'측정값과 단위 / 해당 없음 사유'),condition=field(box,'측정 조건 · 장비');value.maxLength=condition.maxLength=2000;rows.push({id:item.id,kind:'measurement',verdict,value,condition});$('fields').append(box);}
+ $('photos').replaceChildren(element('h2','근거 사진'));
+ for(const photo of d.photos){const p=document.createElement('p'),a=element('a',photo.name+' — 새 창에서 보기');a.href='/review/media?t='+encodeURIComponent(T)+'&session='+encodeURIComponent(session)+'&index='+photo.index;a.target='_blank';a.rel='noopener noreferrer';p.append(a);$('photos').append(p);}
+ $('form').hidden=false;message('승인 대기 '+d.pending.length+'항목 · 실측 '+d.measurements.length+'항목');
+ }catch(e){message(e.message);$('picker').hidden=false;}
+}
+$('form').onsubmit=async e=>{e.preventDefault();$('save').disabled=true;try{const decisions={},measurements={};for(const r of rows){if(!r.verdict.value)continue;if(r.kind==='numeric'){measurements[r.id]=numericRecord(r);continue;}if(r.kind==='decision')decisions[r.id]=r.verdict.value;else measurements[r.id]={verdict:r.verdict.value,value:r.value.value,condition:r.condition.value};}const d=await api('/review/save',{session,reviewer:$('reviewer').value,decisions,measurements});target=d.path;$('form').hidden=true;$('report').hidden=false;message('검토 기록을 저장했습니다. 보고서에 반영하려면 아래 버튼을 누르세요.');}catch(e){message(e.message);}finally{$('save').disabled=false;}};
+$('report').onclick=async()=>{try{const d=await api('/run',{job:'ingest',extra:[target]});$('report').disabled=true;message('보고서 생성 중…');const timer=setInterval(async()=>{try{const r=await api('/log');if(r.state!=='running'){clearInterval(timer);$('report').disabled=false;message(r.state==='done'?'보고서를 만들었습니다. 처음 화면의 결과 폴더에서 확인하세요.':'보고서 생성 실패. 저장한 검토 기록은 남아 있습니다.');}}catch(e){clearInterval(timer);message(e.message);$('report').disabled=false;}},1000);}catch(e){message(e.message);}};
+api('/bundles').then(d=>{for(const item of d.items){const p=document.createElement('p'),b=element('button',item.label+' · '+item.kind);b.onclick=()=>openReview(item.path);p.append(b);$('picker').append(p);}if(!d.items.length)message('촬영 ZIP을 다운로드 폴더에 놓고 새로고침하세요.');}).catch(e=>message(e.message));
+</script></html>
