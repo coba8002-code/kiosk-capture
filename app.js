@@ -217,7 +217,20 @@ function renderDevice(view) {
     g.appendChild(el('div', { class: 'label' }, label));
     g.appendChild(el('input', {
       type: 'text', value: App.device[key] || '', placeholder: ph,
-      oninput: (e) => { App.device[key] = e.target.value; saveState(); $('#device-tag').textContent = App.device.id; },
+      oninput: (e) => {
+        App.device[key] = e.target.value;
+        saveState();
+        $('#device-tag').textContent = App.device.id;
+        if (key === 'id') {
+          const ready = App.device.id.trim().length > 0;
+          const start = $('#start-capture');
+          const note = $('#start-note');
+          if (start) start.disabled = !ready;
+          if (note) note.textContent = ready
+            ? '마커 카드를 준비했는지 확인하세요. 없으면 치수 6항목이 판정되지 않습니다.'
+            : '기기 ID를 입력해야 시작할 수 있습니다.';
+        }
+      },
     }));
     return g;
   };
@@ -306,8 +319,8 @@ function renderDevice(view) {
 
   const ready = App.device.id.trim().length > 0;
   footer(
-    el('button', { class: 'btn primary', disabled: !ready, onclick: () => go(2) }, '촬영 시작'),
-    el('div', { class: 'footnote' },
+    el('button', { id: 'start-capture', class: 'btn primary', disabled: !ready, onclick: () => go(2) }, '촬영 시작'),
+    el('div', { id: 'start-note', class: 'footnote' },
       ready ? '마커 카드를 준비했는지 확인하세요. 없으면 치수 6항목이 판정되지 않습니다.'
             : '기기 ID를 입력해야 시작할 수 있습니다.'));
 }

@@ -20,3 +20,11 @@ def test_release_sources_compile():
         sources.extend((root / folder).rglob('*.py'))
     for source in sources:
         compile(source.read_bytes(), str(source), 'exec')
+
+
+def test_device_id_enables_capture_without_rerender():
+    root = Path(__file__).resolve().parents[1]
+    app_js = (root / 'app' / 'app.js').read_text(encoding='utf-8')
+    assert "id: 'start-capture'" in app_js
+    assert 'if (start) start.disabled = !ready' in app_js
+    assert "id: 'start-note'" in app_js
