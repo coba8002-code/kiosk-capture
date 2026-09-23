@@ -29,29 +29,39 @@ def build(rs: R.RuleSet, protocol: dict) -> dict:
     sets = []
     for s in protocol["sets"]:
         fed = rs.fed_by(s["id"])
+        shots = []
+        for sh in s.get("shots", []):
+            marker_required = bool(sh.get("marker_required", False))
+            marker_plane = sh.get("marker_plane") if marker_required else None
+            shots.append({
+                "id": sh["id"],
+                "label": sh["label"],
+                "note": " ".join((sh.get("note") or "").split()) or None,
+                "required_for": sh.get("required_for") or [],
+                "repeat": sh.get("repeat") or None,
+                "input_mode": sh.get("input_mode") or "camera",
+                "multiple": bool(sh.get("multiple", False)),
+                "marker_required": marker_required,
+                "marker_plane": marker_plane,
+                "marker_placement": (
+                    " ".join((sh.get("marker_placement") or "").split()) or None
+                ),
+                "metadata": sh.get("metadata") or [],
+            })
+        marker_planes = list(dict.fromkeys(
+            sh["marker_plane"] for sh in shots if sh.get("marker_plane")
+        ))
         sets.append({
             "id": s["id"],
             "name": s["name"],
             "medium": s.get("medium", "photo"),
             "required": bool(s.get("required")),
-            "marker": bool(s.get("marker_plane")),
-            "marker_planes": (
-                s["marker_plane"] if isinstance(s.get("marker_plane"), list)
-                else ([s["marker_plane"]] if s.get("marker_plane") else [])
-            ),
+            "marker": bool(marker_planes),
+            "marker_planes": marker_planes,
             "constraints": s.get("constraints") or {},
             "feeds": [r["id"] for r in fed],
             "note": " ".join((s.get("note") or "").split()) or None,
-            "shots": [
-                {
-                    "id": sh["id"],
-                    "label": sh["label"],
-                    "note": " ".join((sh.get("note") or "").split()) or None,
-                    "required_for": sh.get("required_for") or [],
-                    "repeat": sh.get("repeat") or None,
-                }
-                for sh in s.get("shots", [])
-            ],
+            "shots": shots,
         })
 
     marker = protocol["marker"]

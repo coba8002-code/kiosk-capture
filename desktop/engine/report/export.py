@@ -111,10 +111,10 @@ def to_csv(bundle: ReportBundle) -> str:
     """
     buf = io.StringIO()
     w = csv.writer(buf, lineterminator="\n")
-    w.writerow(["영역", "항목", "구분", "판정", "등급", "사유", "다음 담당", "트랙", "출처"])
+    w.writerow(["영역", "항목", "항목명", "구분", "판정", "등급", "사유", "다음 담당", "트랙", "출처"])
     for row in bundle.matrix:
         w.writerow([
-            row["영역"], row["항목"], row["구분"], row["판정"], row["등급"],
+            row["영역"], row["항목"], row["항목명"], row["구분"], row["판정"], row["등급"],
             row["사유"], row["다음 담당"], row["트랙"], row["출처"],
         ])
     return "﻿" + buf.getvalue()
@@ -124,10 +124,10 @@ def undetermined_csv(bundle: ReportBundle) -> str:
     """미판정 항목 표 CSV — 실측 업체·점주에게 그대로 넘기는 작업 목록."""
     buf = io.StringIO()
     w = csv.writer(buf, lineterminator="\n")
-    w.writerow(["항목", "영역", "사유", "다음 담당", "필요 입력", "마커 필요", "조치"])
+    w.writerow(["항목", "항목명", "영역", "사유", "다음 담당", "필요 입력", "마커 필요", "조치"])
     for u in bundle.undetermined:
         w.writerow([
-            u["항목"], u["영역"], u["사유"], u["다음 담당"],
+            u["항목"], u["항목명"], u["영역"], u["사유"], u["다음 담당"],
             " ".join(u["필요 입력"]), "예" if u["마커 필요"] else "아니오",
             " ".join(u["안내"].split()),
         ])

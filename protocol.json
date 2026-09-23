@@ -418,7 +418,13 @@
      "label": "주요 플로우 전 단계 정면 촬영",
      "note": "시작 화면부터 완료 화면까지 한 단계도 건너뛰지 않는다. 정면·무보정.",
      "required_for": [],
-     "repeat": "플로우 단계 수만큼"
+     "repeat": "플로우 단계 수만큼",
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": true,
+     "marker_plane": "display",
+     "marker_placement": "디스플레이 베젤 위에 붙이되 화면 내용은 가리지 않는다. 화면과 같은 방향으로 평평하게 둔다.",
+     "metadata": []
     },
     {
      "id": "S1-02",
@@ -427,7 +433,13 @@
      "required_for": [
       "3.h"
      ],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": []
     },
     {
      "id": "S1-03",
@@ -436,17 +448,29 @@
      "required_for": [
       "3.j"
      ],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": []
     },
     {
      "id": "S1-04",
-     "label": "원본 무보정 사본",
-     "note": "명도 대비 계산은 화이트밸런스·감마 보정에 흔들린다. 앱은 보정 없는 원본(가능하면 RAW 또는 무보정 JPEG)을 함께 저장한다.",
+     "label": "원본 UI 이미지 파일",
+     "note": "키오스크 제작사에서 받은 화면 원본, 스크린샷 또는 무보정 이미지 파일을 갤러리·파일에서 선택한다. 여러 장을 한 번에 넣을 수 있다.",
      "required_for": [
       "3.i",
       "3.j"
      ],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "gallery",
+     "multiple": true,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": []
     }
    ]
   },
@@ -487,7 +511,13 @@
      "label": "시작부터 완료까지 1회 연속 조작",
      "note": "중간 끊김 없이 한 번에. 음성 안내가 들리도록 주변 소음을 최소화한다.",
      "required_for": [],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": []
     },
     {
      "id": "S2-02",
@@ -496,7 +526,13 @@
      "required_for": [
       "2.b"
      ],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": []
     },
     {
      "id": "S2-03",
@@ -506,7 +542,13 @@
       "3.d",
       "3.e"
      ],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": []
     },
     {
      "id": "S2-04",
@@ -516,7 +558,13 @@
       "7.a",
       "7.d"
      ],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": []
     }
    ]
   },
@@ -527,9 +575,10 @@
    "required": true,
    "marker": true,
    "marker_planes": [
+    "elevation",
     "control_panel",
     "dispenser",
-    "elevation"
+    "floor"
    ],
    "constraints": {},
    "feeds": [
@@ -557,7 +606,13 @@
       "9.a",
       "9.b"
      ],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": true,
+     "marker_plane": "elevation",
+     "marker_placement": "기기 옆 바닥에 마커를 수직으로 세우고 카드 하단을 바닥에 정확히 맞춘다.",
+     "metadata": []
     },
     {
      "id": "S3-02",
@@ -566,14 +621,26 @@
      "required_for": [
       "9.a"
      ],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": true,
+     "marker_plane": "elevation",
+     "marker_placement": "기기 측면과 같은 거리에서 마커를 수직으로 세우고 하단을 바닥에 맞춘다.",
+     "metadata": []
     },
     {
      "id": "S3-03",
      "label": "휠체어 눈높이 시점",
      "note": "바닥에서 약 1,100mm 높이에서 화면을 바라본 컷. 화면 가림·반사 확인용.",
      "required_for": [],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": []
     },
     {
      "id": "S3-04",
@@ -585,7 +652,13 @@
       "3.f",
       "3.k"
      ],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": true,
+     "marker_plane": "control_panel",
+     "marker_placement": "키패드·물리 버튼 바로 옆의 같은 평면에 붙인다. 튀어나오거나 뒤로 들어간 면은 따로 촬영한다.",
+     "metadata": []
     },
     {
      "id": "S3-05",
@@ -595,14 +668,26 @@
       "1.e",
       "1.i"
      ],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": true,
+     "marker_plane": "dispenser",
+     "marker_placement": "투입구·배출구 바로 옆, 측정할 부분과 같은 깊이의 면에 붙인다.",
+     "metadata": []
     },
     {
      "id": "S3-06",
      "label": "하부 공간 (무릎·발 공간)",
      "note": "하부 개방 구조인 경우. 마커를 바닥에 눕혀 깊이 기준을 만든다.",
      "required_for": [],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": true,
+     "marker_plane": "floor",
+     "marker_placement": "기기 아래 바닥에 마커를 평평하게 눕혀 무릎·발 공간과 함께 찍는다.",
+     "metadata": []
     },
     {
      "id": "S3-07",
@@ -612,7 +697,13 @@
       "1.g",
       "1.h"
      ],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": []
     }
    ]
   },
@@ -623,7 +714,7 @@
    "required": true,
    "marker": true,
    "marker_planes": [
-    "elevation"
+    "floor"
    ],
    "constraints": {},
    "feeds": [],
@@ -634,28 +725,97 @@
      "label": "기기 전면 활동공간 (마커 바닥 배치)",
      "note": null,
      "required_for": [],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": true,
+     "marker_plane": "floor",
+     "marker_placement": "기기 앞 활동공간 바닥에 마커를 평평하게 놓고, 마커와 활동공간 전체가 함께 보이게 찍는다.",
+     "metadata": []
     },
     {
      "id": "S4-02",
      "label": "접근 경로 — 출입구에서 기기까지",
-     "note": null,
+     "note": "마커 없이 출입구부터 기기까지 경로 전체가 이어져 보이게 촬영한다.",
      "required_for": [],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": []
     },
     {
      "id": "S4-03",
      "label": "바닥 단차·경사 근접",
-     "note": null,
+     "note": "근접 사진과 전체 위치 사진을 함께 찍는다. 높이·경사 수치가 필요하면 줄자·경사계로 별도 실측한다.",
      "required_for": [],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": []
     },
     {
      "id": "S4-04",
      "label": "화면 눈부심·반사 상태",
      "note": "촬영 시각과 조명 상태를 함께 기록한다. 시간대에 따라 결과가 달라진다.",
      "required_for": [],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": [
+      {
+       "key": "captured_at",
+       "label": "촬영 시각",
+       "type": "auto",
+       "required": true
+      },
+      {
+       "key": "lighting",
+       "label": "조명 상태",
+       "type": "select",
+       "required": true,
+       "options": [
+        "실내 조명",
+        "자연광",
+        "직사광",
+        "역광",
+        "혼합광",
+        "기타"
+       ]
+      },
+      {
+       "key": "reflection",
+       "label": "반사 정도",
+       "type": "select",
+       "required": true,
+       "options": [
+        "거의 없음",
+        "약함",
+        "화면 일부 가림",
+        "내용 확인 어려움"
+       ]
+      },
+      {
+       "key": "illuminance_lux",
+       "label": "조도(lux, 선택)",
+       "type": "number",
+       "required": false
+      },
+      {
+       "key": "note",
+       "label": "광원 위치·특이사항",
+       "type": "text",
+       "required": false
+      }
+     ]
     }
    ]
   },
@@ -687,14 +847,26 @@
      "label": "스피커 출력 — 최소 음량",
      "note": null,
      "required_for": [],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": []
     },
     {
      "id": "S5-02",
      "label": "스피커 출력 — 최대 음량",
      "note": null,
      "required_for": [],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": []
     },
     {
      "id": "S5-03",
@@ -703,7 +875,13 @@
      "required_for": [
       "3.b"
      ],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": []
     },
     {
      "id": "S5-04",
@@ -712,7 +890,13 @@
      "required_for": [
       "10.b"
      ],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": []
     }
    ]
   },
@@ -732,7 +916,13 @@
      "label": "납품사 제공 설치 매뉴얼 PDF",
      "note": "제출된 경우에만 분석한다. 미제출은 '해당 없음'이 아니라 '미제출'로 기록한다.",
      "required_for": [],
-     "repeat": null
+     "repeat": null,
+     "input_mode": "camera",
+     "multiple": false,
+     "marker_required": false,
+     "marker_plane": null,
+     "marker_placement": null,
+     "metadata": []
     }
    ]
   }

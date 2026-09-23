@@ -18,6 +18,7 @@ const App = {
   device: { id: '', location: '', product_type: '중대형', scopes: [], exemptions: [] },
   captured_by: '',
   shots: [],        // {key, set, shot, name, type, blob, marker_plane, masked, marker_hint}
+  shotMeta: {},     // shotId -> 촬영 시각·조명·반사 상태 등 현장 기록
   answers: {},      // ruleId -> 'yes' | 'no' | 'na'
   openSet: null,
   pending: null,    // 마스킹 대기 중인 촬영
@@ -99,7 +100,7 @@ const DB = (() => {
 async function saveState() {
   await DB.putMeta('state', {
     device: App.device, captured_by: App.captured_by,
-    answers: App.answers, step: App.step,
+    answers: App.answers, shotMeta: App.shotMeta, step: App.step,
   });
 }
 
@@ -109,6 +110,7 @@ async function loadState() {
     App.device = s.device || App.device;
     App.captured_by = s.captured_by || '';
     App.answers = s.answers || {};
+    App.shotMeta = s.shotMeta || {};
   }
   App.shots = await DB.allShots();
 }
@@ -381,6 +383,76 @@ function renderCapture(view) {
       el('button', { class: 'btn primary', onclick: () => go(3) }, '점주 확인으로')));
 }
 
+const PLANE_NAME = {
+  display: '화면과 같은 면', control_panel: '버튼과 같은 면',
+  dispenser: '투입구·배출구와 같은 깊이', elevation: '바닥에서 수직',
+  floor: '바닥에 평평하게',
+};
+
+function markerGuideSvg(plane) {
+  const markerAt = (x, y, scale = 1) => `<g transform="translate(${x} ${y}) scale(${scale})">`
+    + '<rect width="34" height="34" rx="2" fill="#fff" stroke="#0E2439" stroke-width="4"/>'
+    + '<rect x="7" y="7" width="20" height="20" fill="#0E2439"/>'
+    + '<rect x="12" y="12" width="10" height="10" fill="#fff"/></g>';
+  const scenes = {
+    display: '<rect x="35" y="22" width="150" height="104" rx="8" fill="#E7EFF9" stroke="#17385C" stroke-width="4"/>'
+      + '<rect x="50" y="36" width="120" height="76" rx="3" fill="#fff"/>' + markerAt(112, 58),
+    control_panel: '<path d="M40 30h140v100H40z" fill="#E7EFF9" stroke="#17385C" stroke-width="4"/>'
+      + '<g fill="#17385C"><circle cx="70" cy="66" r="10"/><circle cx="70" cy="101" r="10"/></g>' + markerAt(112, 58),
+    dispenser: '<rect x="32" y="26" width="156" height="105" rx="8" fill="#E7EFF9" stroke="#17385C" stroke-width="4"/>'
+      + '<rect x="55" y="70" width="58" height="18" rx="4" fill="#17385C"/>' + markerAt(125, 63),
+    elevation: '<path d="M45 20h105v122H45z" fill="#E7EFF9" stroke="#17385C" stroke-width="4"/>'
+      + '<path d="M18 143h185" stroke="#17385C" stroke-width="4"/>'
+      + markerAt(153, 108),
+    floor: '<path d="M20 122L95 72l105 50-75 38z" fill="#E7EFF9" stroke="#17385C" stroke-width="4"/>'
+      + markerAt(105, 105, 0.85),
+  };
+  return `<svg viewBox="0 0 220 165" role="img" aria-label="${PLANE_NAME[plane] || '마커 배치'} 예시">`
+    + `${scenes[plane] || scenes.display}<circle cx="188" cy="28" r="16" fill="#F2B705"/>`
+    + '<path d="M181 28l5 5 10-12" fill="none" stroke="#0E2439" stroke-width="4" stroke-linecap="round"/>'
+    + '</svg>';
+}
+
+function markerGuide(sh, compact = false) {
+  const box = el('div', { class: `marker-guide ${compact ? 'compact' : ''}` });
+  box.appendChild(el('div', { class: 'marker-picture', html: markerGuideSvg(sh.marker_plane) }));
+  box.appendChild(el('div', { class: 'marker-copy' },
+    el('b', {}, `측정 마커 · ${PLANE_NAME[sh.marker_plane] || sh.marker_plane}`),
+    el('p', {}, sh.marker_placement || '측정할 대상과 같은 평면에 마커를 놓으세요.'),
+    el('small', {}, '검은 사각형 전체가 보이고, 휘거나 빛이 반사되지 않게 촬영하세요.')));
+  return box;
+}
+
+function renderShotMetadata(sh) {
+  if (!sh.metadata?.length) return null;
+  const meta = App.shotMeta[sh.id] || (App.shotMeta[sh.id] = {});
+  const box = el('div', { class: 'shot-meta' },
+    el('div', { class: 'shot-meta-title' }, '사진과 함께 기록'));
+  sh.metadata.forEach((f) => {
+    const row = el('label', { class: 'meta-field' },
+      el('span', {}, f.label + (f.required ? ' · 필수' : '')));
+    if (f.type === 'auto') {
+      row.appendChild(el('div', { class: 'meta-auto' }, meta[f.key] || '사진을 추가하면 자동 기록됩니다.'));
+    } else if (f.type === 'select') {
+      const select = el('select', {
+        'aria-label': f.label,
+        onchange: (e) => { meta[f.key] = e.target.value; saveState(); toast(`${f.label}: ${e.target.value || '미선택'}`); },
+      }, el('option', { value: '' }, '선택하세요'));
+      f.options.forEach((o) => select.appendChild(el('option', { value: o, selected: meta[f.key] === o }, o)));
+      row.appendChild(select);
+    } else {
+      row.appendChild(el('input', {
+        type: f.type === 'number' ? 'number' : 'text', value: meta[f.key] || '',
+        inputmode: f.type === 'number' ? 'decimal' : null,
+        placeholder: f.required ? '필수 입력' : '선택 입력',
+        oninput: (e) => { meta[f.key] = e.target.value; saveState(); },
+      }));
+    }
+    box.appendChild(row);
+  });
+  return box;
+}
+
 function renderShot(set, sh) {
   const mine = shotsFor(sh.id);
   const box = el('div', { class: 'shot' });
@@ -388,6 +460,9 @@ function renderShot(set, sh) {
   body.appendChild(el('div', { class: 'shot-id' }, sh.id));
   body.appendChild(el('div', { class: 'shot-label' }, sh.label));
   if (sh.note) body.appendChild(el('div', { class: 'shot-note' }, sh.note));
+  body.appendChild(el('div', { class: `marker-need ${sh.marker_required ? 'yes' : 'no'}` },
+    sh.marker_required ? `측정 마커 필요 · ${PLANE_NAME[sh.marker_plane] || sh.marker_plane}` : '측정 마커 필요 없음'));
+  if (sh.marker_required) body.appendChild(markerGuide(sh, true));
   if (sh.required_for?.length) {
     body.appendChild(el('div', { class: 'shot-req' },
       `이 컷이 없으면 판정 불가: ${sh.required_for.join(', ')}`));
@@ -405,6 +480,9 @@ function renderShot(set, sh) {
         t.appendChild(el('div', { class: `mk ${s.marker_hint === 'ok' ? 'ok' : 'no'}` },
           s.marker_hint === 'ok' ? '마커' : '확인'));
       }
+      if (s.quality_issues?.length) {
+        t.appendChild(el('div', { class: 'retake' }, '재촬영 권장'));
+      }
       t.appendChild(el('button', {
         class: 'x', type: 'button', 'aria-label': '삭제',
         onclick: async (e) => {
@@ -418,11 +496,14 @@ function renderShot(set, sh) {
     });
     body.appendChild(thumbs);
   }
+  if (mine.length && sh.metadata?.length) body.appendChild(renderShotMetadata(sh));
 
   const btn = el('button', {
     class: 'btn small ' + (mine.length ? '' : 'accent'),
     onclick: () => capture(set, sh),
-  }, mine.length ? '추가 촬영' : (set.medium === 'video' ? '영상 촬영'
+  }, mine.length ? (sh.multiple ? '원본 이미지 더 추가' : '추가 촬영')
+    : (sh.input_mode === 'gallery' ? '원본 이미지 선택'
+    : set.medium === 'video' ? '영상 촬영'
     : set.medium === 'audio' ? '녹음' : set.medium === 'document' ? '파일 선택' : '촬영'));
 
   box.appendChild(body);
@@ -438,7 +519,7 @@ function renderOwner(view) {
 
   App.protocol.owner_questions.forEach((q) => {
     const cur = App.answers[q.id];
-    const card = el('div', { class: `card ${cur ? 'sel' : ''}` });
+    const card = el('div', { class: 'card owner-card' });
     card.appendChild(el('div', { style: 'display:flex;gap:8px;align-items:center;margin-bottom:8px' },
       el('span', { class: 'badge' }, q.id), el('strong', {}, q.name)));
     card.appendChild(el('div', { style: 'font-size:14px;color:var(--ink-2);line-height:1.65' }, q.question));
@@ -452,11 +533,15 @@ function renderOwner(view) {
         onclick: () => {
           App.answers[q.id] = App.answers[q.id] === val ? undefined : val;
           if (!App.answers[q.id]) delete App.answers[q.id];
+          const selected = App.answers[q.id];
           saveState(); render();
+          toast(selected ? `${q.id}: ${label} 선택됨` : `${q.id}: 선택 해제됨`);
         },
-      }, label));
+      }, cur === val ? `✓ ${label}` : label));
     });
     card.appendChild(row);
+    card.appendChild(el('div', { class: 'answer-state', 'aria-live': 'polite' },
+      cur ? `선택한 답: ${{ yes: '예', no: '아니오', na: '해당 없음' }[cur]}` : '아직 답하지 않았습니다.'));
     wrap.appendChild(card);
   });
 
@@ -507,6 +592,23 @@ function renderSubmit(view) {
         `판정 불가: ${f.blockedRules.slice(0, 14).join(', ')}${f.blockedRules.length > 14 ? ' 외' : ''}`));
     }
     wrap.appendChild(card);
+  }
+
+  const retakes = retakeRecommendations();
+  if (retakes.length) {
+    const card = el('div', { class: 'card bad' },
+      el('div', { class: 'label', style: 'color:var(--bad)' }, `재촬영 권장 ${retakes.length}건`));
+    retakes.forEach((s) => card.appendChild(el('div', { class: 'retake-row' },
+      el('b', {}, s.shot), ` — ${s.quality_issues.join(' · ')}`)));
+    card.appendChild(el('div', { class: 'note bad' },
+      '현장을 떠나기 전에 빨간 표시가 있는 사진을 확인하고 다시 촬영하세요.'));
+    wrap.appendChild(card);
+  }
+
+  const missingMeta = missingShotMetadata();
+  if (missingMeta.length) {
+    wrap.appendChild(el('div', { class: 'note warn' },
+      `사진 기록이 비었습니다: ${missingMeta.join(', ')}. 촬영 목록으로 돌아가 입력하세요.`));
   }
 
   if (f.unanswered.length) {
@@ -628,12 +730,34 @@ function toggleExemption(id) {
   toast(on ? '면제를 해제했습니다.' : '면제를 적용했습니다. 해당 항목은 진단에서 빠집니다.');
 }
 
-function go(step) { App.step = step; saveState(); render(); }
+function retakeRecommendations() {
+  return App.shots.filter((s) => s.quality_issues?.length);
+}
+
+function missingShotMetadata() {
+  const out = [];
+  for (const set of App.protocol.sets) for (const sh of set.shots) {
+    if (!shotsFor(sh.id).length || !sh.metadata?.length) continue;
+    const meta = App.shotMeta[sh.id] || {};
+    const missing = sh.metadata.filter((f) => f.required && !String(meta[f.key] || '').trim());
+    if (missing.length) out.push(`${sh.id} ${missing.map((f) => f.label).join('·')}`);
+  }
+  return out;
+}
+
+function go(step) {
+  if (step >= 3 && App.step === 2) {
+    const bad = retakeRecommendations();
+    if (bad.length) toast(`재촬영 권장 자료 ${bad.length}개가 있습니다. 제출 전에 빨간 표시를 확인하세요.`, 7000);
+  }
+  App.step = step; saveState(); render();
+}
 
 async function resetAll() {
   if (!confirm('촬영물과 입력을 모두 지웁니다. 계속할까요?')) return;
   await DB.clearAll();
-  App.shots = []; App.answers = {}; App.device = { id: '', location: '', product_type: '중대형', scopes: [], exemptions: [] };
+  App.shots = []; App.answers = {}; App.shotMeta = {};
+  App.device = { id: '', location: '', product_type: '중대형', scopes: [], exemptions: [] };
   App.captured_by = ''; App.step = 1;
   render();
 }
@@ -641,23 +765,63 @@ async function resetAll() {
 /* ─────────────────────────── 촬영 ─────────────────────────── */
 
 function capture(set, sh) {
-  const input = set.medium === 'video' ? $('#capture-video')
+  if (sh.marker_required) {
+    openMarkerGuide(set, sh);
+    return;
+  }
+  chooseCaptureInput(set, sh);
+}
+
+function openMarkerGuide(set, sh) {
+  const overlay = el('div', { class: 'guide-overlay' });
+  const dialog = el('div', { class: 'guide-dialog', role: 'dialog', 'aria-modal': 'true',
+    'aria-label': `${sh.label} 마커 부착 안내` });
+  dialog.appendChild(el('div', { class: 'guide-kicker' }, `${sh.id} · 촬영 전에 확인`));
+  dialog.appendChild(el('h2', {}, '마커를 먼저 붙이세요'));
+  dialog.appendChild(markerGuide(sh));
+  dialog.appendChild(el('div', { class: 'guide-actions' },
+    el('button', { class: 'btn', onclick: () => overlay.remove() }, '취소'),
+    el('button', { class: 'btn accent', onclick: () => {
+      overlay.remove();
+      chooseCaptureInput(set, sh);
+    } }, '부착 완료 · 촬영 열기')));
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+  dialog.querySelector('.btn.accent').focus();
+}
+
+function chooseCaptureInput(set, sh) {
+  const input = sh.input_mode === 'gallery' ? $('#capture-gallery')
+    : set.medium === 'video' ? $('#capture-video')
     : set.medium === 'audio' ? $('#capture-audio')
     : set.medium === 'document' ? $('#capture-any')
     : $('#capture-input');
 
-  App.pending = { set, sh };
+  App.pending = { set, sh, queue: [] };
   input.value = '';
   input.onchange = async () => {
-    const file = input.files?.[0];
-    if (!file) return;
-    if (set.medium === 'photo') {
-      openMask(file);                 // 사진은 가리기 단계를 거친다
-    } else {
-      await storeShot(file, false);
-    }
+    const files = [...(input.files || [])];
+    if (!files.length) { App.pending = null; return; }
+    App.pending.queue = sh.multiple ? files : files.slice(0, 1);
+    App.pending.total = App.pending.queue.length;
+    await nextPendingFile();
   };
   input.click();
+}
+
+async function nextPendingFile() {
+  if (!App.pending) return;
+  const file = App.pending.queue.shift();
+  if (!file) {
+    const total = App.pending.total || 1;
+    App.pending = null;
+    render();
+    toast(total > 1 ? `원본 이미지 ${total}장을 추가했습니다.` : '촬영 자료를 저장했습니다.');
+    return;
+  }
+  App.pending.current = file;
+  if (App.pending.set.medium === 'photo') await openMask(file);
+  else await storeShot(file, false);
 }
 
 async function storeShot(blob, masked) {
@@ -670,17 +834,21 @@ async function storeShot(blob, masked) {
   const ext = extFor(blob, set.medium);
   const type = typeFor(blob, set.medium);
 
-  const plane = set.marker_planes?.[0] || null;
+  const plane = sh.marker_required ? sh.marker_plane : null;
   const rec = {
     key: `${sh.id}_${Date.now()}`,
     set: set.id, shot: sh.id,
     name: `${sh.id}_${String(n).padStart(3, '0')}.${ext}`,
-    type, blob, marker_plane: set.marker ? plane : null,
-    masked, marker_hint: null,
+    type, blob, marker_plane: plane,
+    masked, marker_hint: null, captured_at: new Date().toISOString(), quality_issues: [],
   };
 
-  if (set.marker && type === 'photo') {
+  if (sh.marker_required && type === 'photo') {
     rec.marker_hint = await quickMarkerHint(blob) ? 'ok' : 'check';
+    if (rec.marker_hint === 'check') rec.quality_issues.push('측정 마커를 찾기 어려움');
+  }
+  if (type === 'photo') {
+    rec.quality_issues.push(...await quickPhotoQuality(blob));
   }
 
   try {
@@ -695,11 +863,42 @@ async function storeShot(blob, masked) {
     return;
   }
   App.shots.push(rec);
-  App.pending = null;
-  render();
-  if (rec.marker_hint === 'check') {
-    toast('마커가 잘 보이지 않습니다. 더 가까이·정면으로 다시 찍어 주세요.', 4200);
+  if (sh.metadata?.length) {
+    const meta = App.shotMeta[sh.id] || (App.shotMeta[sh.id] = {});
+    if (!meta.captured_at) meta.captured_at = new Date(rec.captured_at).toLocaleString('ko-KR');
+    await saveState();
   }
+  render();
+  if (rec.quality_issues.length) {
+    toast(`재촬영 권장 — ${rec.quality_issues.join(' · ')}`, 6500);
+  }
+  await nextPendingFile();
+}
+
+async function quickPhotoQuality(blob) {
+  const issues = [];
+  try {
+    const bmp = await createImageBitmap(blob);
+    if (bmp.width < 720 || bmp.height < 720) issues.push('해상도가 낮음');
+    const W = 240, H = Math.max(1, Math.round(bmp.height * W / bmp.width));
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const ctx = cv.getContext('2d', { willReadFrequently: true });
+    ctx.drawImage(bmp, 0, 0, W, H);
+    const px = ctx.getImageData(0, 0, W, H).data;
+    let dark = 0, bright = 0, edges = 0, prev = 0;
+    for (let i = 0, p = 0; i < px.length; i += 4, p++) {
+      const y = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+      if (y < 18) dark++;
+      if (y > 245) bright++;
+      if (p % W && Math.abs(y - prev) > 26) edges++;
+      prev = y;
+    }
+    const n = W * H;
+    if (bright / n > 0.48) issues.push('밝은 부분이 과도함');
+    if (dark / n > 0.48) issues.push('어두운 부분이 과도함');
+    if (edges / n < 0.012) issues.push('흐리거나 초점이 약함');
+  } catch { /* 브라우저에서 확인할 수 없으면 PC 분석으로 넘긴다 */ }
+  return [...new Set(issues)];
 }
 
 /** 남은 저장 공간을 확인해 부족하면 알린다.
@@ -904,7 +1103,10 @@ async function exportBundle() {
     shots.push({
       set: s.set, shot: s.shot, file: path,
       marker_plane: s.marker_plane, masked: !!s.masked,
-      note: s.marker_hint === 'check' ? '마커 예비확인 실패' : '',
+      captured_at: s.captured_at,
+      metadata: { ...(App.shotMeta[s.shot] || {}), captured_at: s.captured_at },
+      quality_issues: s.quality_issues || [],
+      note: (s.quality_issues || []).join(' · '),
     });
   }
 

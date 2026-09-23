@@ -38,7 +38,7 @@ if not getattr(sys, "frozen", False):
 
 from engine.paths import resource_dir                       # noqa: E402
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 PKG_NAME = f"KFA-{VERSION}"
 
 # 소스에서 제외할 것 (경로 조각 또는 glob)

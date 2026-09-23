@@ -199,7 +199,13 @@ def render_owner(bundle: ReportBundle, *, date: str = "") -> str:
             by[u["다음 담당"]] = by.get(u["다음 담당"], 0) + 1
         rows = " · ".join(f"{k} {v}항목" for k, v in sorted(by.items(), key=lambda kv: -kv[1]))
         parts.append(f'<div class="note"><b>아직 판정하지 못한 {len(bundle.undetermined)}항목</b> — '
-                     f'{_e(rows)}. 상세는 담당자용 리포트를 보세요.</div>')
+                     f'{_e(rows)}. 아래 항목은 추가 촬영·실측·확인이 필요합니다.</div>')
+        parts.append('<table><tr><th>항목</th><th>무엇을 확인하나요</th><th>다음에 할 일</th></tr>')
+        for u in bundle.undetermined:
+            parts.append(f'<tr><td class="n"><b>{_e(u["항목"])}</b></td>'
+                         f'<td>{_e(u["항목명"])}</td>'
+                         f'<td>{_e(" ".join(u["안내"].split())[:110])}</td></tr>')
+        parts.append('</table>')
 
     if bundle.cautions:
         from .. import usability
@@ -246,10 +252,11 @@ def render_authority(bundle: ReportBundle, *, date: str = "") -> str:
     if bundle.undetermined:
         parts.append(f'<h2><i style="background:#8C5200"></i>미판정 {len(bundle.undetermined)}항목 — '
                      f'무엇을 판정하지 못했고, 누가 이어받는가</h2>')
-        parts.append('<table><tr><th>항목</th><th>영역</th><th>사유</th>'
+        parts.append('<table><tr><th>항목</th><th>무엇을 확인하나요</th><th>영역</th><th>사유</th>'
                      '<th>다음 담당</th><th>조치</th></tr>')
         for u in bundle.undetermined:
             parts.append(f'<tr><td class="n"><b>{_e(u["항목"])}</b></td>'
+                         f'<td>{_e(u["항목명"])}</td>'
                          f'<td>{_e(u["영역"])}</td><td>{_e(u["사유"])}</td>'
                          f'<td>{_e(u["다음 담당"])}</td>'
                          f'<td>{_e(" ".join(u["안내"].split())[:70])}</td></tr>')
@@ -257,7 +264,7 @@ def render_authority(bundle: ReportBundle, *, date: str = "") -> str:
 
     # 40항목 매트릭스
     parts.append('<h2><i></i>별표5 40항목 판정 매트릭스</h2>')
-    parts.append('<table><tr><th>항목</th><th>구분</th><th>판정</th><th>등급</th>'
+    parts.append('<table><tr><th>항목</th><th>무엇을 확인하나요</th><th>구분</th><th>판정</th><th>등급</th>'
                  '<th>트랙</th><th>출처</th><th>측정값</th></tr>')
     for row in bundle.matrix:
         fg, bg = _TONE.get(row["판정"], ("#5D6B79", "#F6F8FA"))
@@ -267,7 +274,8 @@ def render_authority(bundle: ReportBundle, *, date: str = "") -> str:
             k = next(iter(m))
             mtxt = f"{k}: {m[k]}"
         parts.append(
-            f'<tr><td class="n"><b>{_e(row["항목"])}</b></td><td>{_e(row["구분"])}</td>'
+            f'<tr><td class="n"><b>{_e(row["항목"])}</b></td>'
+            f'<td>{_e(row["항목명"])}</td><td>{_e(row["구분"])}</td>'
             f'<td><span class="cell" style="background:{bg};color:{fg}">{_e(row["판정"])}</span></td>'
             f'<td>{_e(row["등급"])}</td><td class="n">{_e(row["트랙"])}</td>'
             f'<td>{_e(row["출처"])}</td><td>{_e(str(mtxt)[:52])}</td></tr>')

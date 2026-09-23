@@ -46,8 +46,9 @@ if not getattr(sys, "frozen", False):
 from engine.paths import app_dir, output_dir, resource_dir   # noqa: E402
 from tools import easy                                       # noqa: E402
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 DEFAULT_PORT = 8097          # 촬영 앱은 8099. 겹치지 않게 둔다.
+DEFAULT_WEB_URL = "https://coba8002-code.github.io/kiosk-capture/"
 
 # 화면에서 부를 수 있는 것 — 여기 없는 것은 실행되지 않는다.
 JOBS: dict[str, dict] = {
@@ -364,9 +365,9 @@ def page(token: str) -> str:
       </div>
       <div class="card">
         <span class="n">STEP 2</span><h3>촬영하기</h3>
-        <p>폰으로 키오스크를 찍습니다. 화면에 뜨는 QR 을 폰 카메라로 찍으면 열립니다.</p>
-        <button class="primary" onclick="serve()">촬영 앱 켜기</button>
-        <button class="btn ghost" onclick="webqr()">웹서버에 올려 뒀다면</button>
+        <p>폰으로 키오스크를 찍습니다. 인터넷이 되는 곳에서는 공개된 HTTPS 앱을 바로 엽니다.</p>
+        <button class="primary" onclick="webqr()">촬영 앱 QR 열기</button>
+        <button class="btn ghost" onclick="serve()">같은 와이파이에서 PC로 열기</button>
       </div>
       <div class="card">
         <span class="n">STEP 3</span><h3>진단하기</h3>
@@ -543,17 +544,15 @@ function pick() {{
 }}
 function webqr() {{
   api('/weburl').then(r => {{
-    const u = prompt('촬영 앱을 올려 둔 주소를 넣으세요.\\n(예: https://example.or.kr/kiosk/)', r.url || 'https://');
-    if (!u) return;
-    api('/weburl', {{url:u}}).then(x => {{
-      if (!x.ok) {{ msg('<div class="note">' + x.error + '</div>'); return; }}
-      msg('<div class="addr"><img alt="촬영 앱 주소 QR 코드" src="/qr?t=' + T +
-        '&u=' + encodeURIComponent(x.url) + '"><div><div class="u">' + x.url + '</div>' +
-        '<p style="margin:10px 0 0;color:var(--ink-2)">폰 카메라로 QR 을 비추면 촬영 앱이 열립니다.<br>' +
-        '와이파이가 같지 않아도 되고, 이 PC 를 켜 두지 않아도 됩니다.</p></div></div>' +
-        (x.url.startsWith('https://') ? '' :
-         '<div class="note"><b>http 주소입니다.</b> 카메라 권한과 오프라인 저장이 동작하지 않습니다. https 로 올리세요.</div>'));
-    }});
+    const u = r.url;
+    if (!u) {{ msg('<div class="note">촬영 앱 주소가 없습니다.</div>'); return; }}
+    msg('<div class="addr"><img alt="촬영 앱 접속 QR 코드" src="/qr?t=' + T +
+      '&u=' + encodeURIComponent(u) + '"><div><div class="u">' + u + '</div>' +
+      '<p style="margin:10px 0;color:var(--ink-2)">이것은 <b>앱 접속용 QR</b>입니다. 측정 마커와 다릅니다.<br>' +
+      '폰 카메라로 비추거나 아래 버튼을 눌러 앱을 여세요.</p>' +
+      '<a class="btn primary" target="_blank" rel="noopener" href="' + u + '">이 PC에서 촬영 앱 확인</a></div></div>' +
+      (u.startsWith('https://') ? '' :
+       '<div class="note"><b>http 주소입니다.</b> 카메라 권한과 오프라인 저장이 동작하지 않습니다. https 로 올리세요.</div>'));
   }});
 }}
 function openp(what) {{ api('/open', {{what:what}}).then(r => {{
@@ -755,7 +754,7 @@ def _web_url_load() -> str:
     try:
         return f.read_text(encoding="utf-8").strip()
     except OSError:
-        return ""
+        return DEFAULT_WEB_URL
 
 
 def _web_url_save(url: str) -> tuple[bool, str]:
@@ -781,6 +780,32 @@ def _newest_report() -> Path | None:
     return ds[0] if ds else None
 
 
+def _marker_sheet() -> Path | None:
+    """인쇄용 마커를 찾고, 없으면 사용자가 누른 자리에서 바로 만든다.
+
+    배포 ZIP 의 `인쇄물`과 실행 뒤 생성되는 `assets`는 위치가 다르다. 예전에는
+    assets만 찾아서 동봉된 인쇄물이 있어도 '아직 만들어지지 않았습니다'라고 했다.
+    """
+    candidates = [
+        output_dir() / "BFK-MARK-A_A4_sheet.png",
+        app_dir() / "인쇄물" / "1_마커카드_A4.png",
+        app_dir() / "1_마커카드_A4.png",
+    ]
+    for path in candidates:
+        if path.is_file():
+            return path
+    try:
+        from tools import make_marker
+        cards = [make_marker.build(i) for i in (0, 1, 2, 3)]
+        target = candidates[0]
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if make_marker.cv2.imwrite(str(target), make_marker.sheet(cards)):
+            return target
+    except Exception:                         # 화면에는 아래의 구체적 복구 안내를 낸다
+        return None
+    return None
+
+
 def _open_what(what: str) -> tuple[bool, str]:
     """화면이 열 수 있는 것은 여기 적힌 것뿐이다 — 경로를 화면에서 받지 않는다."""
     if what == "output":
@@ -788,8 +813,7 @@ def _open_what(what: str) -> tuple[bool, str]:
     elif what == "web":
         target = output_dir() / "web"
     elif what == "marker":
-        target = next(iter(sorted(output_dir().glob("BFK-MARK-A_A4_sheet.png"))), None) \
-            or next(iter(sorted(output_dir().glob("*A4*.png"))), None)
+        target = _marker_sheet()
     elif what == "sheet":
         target = output_dir() / "field-sheet.html"
     elif what == "manual":
@@ -802,6 +826,8 @@ def _open_what(what: str) -> tuple[bool, str]:
     else:
         return False, "알 수 없는 대상"
     if target is None or not Path(target).exists():
+        if what == "marker":
+            return False, "마커 카드를 만들지 못했습니다. '준비 시작'을 다시 누르고 오류 내용을 확인하세요."
         return False, "아직 만들어지지 않았습니다"
     return (True, "") if easy.open_path(Path(target)) else (False, "열지 못했습니다")
 

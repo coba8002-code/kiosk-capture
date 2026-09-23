@@ -61,7 +61,7 @@ if not getattr(sys, "frozen", False):
 
 from engine.paths import output_dir, resource_dir  # noqa: E402
 
-VERSION = "0.3.0"
+VERSION = "0.3.1"
 
 MENU = [
     ("1", "check",     "설치·동작 점검",        "처음이라면 여기부터"),

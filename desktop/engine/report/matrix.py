@@ -151,6 +151,7 @@ def build(
             row: dict[str, Any] = {
                 "영역": cat_name,
                 "항목": rid,
+                "항목명": _short_title(rule),
                 "구분": rule["scope"],
                 "판정": verdict.value,
                 "등급": (a.grade.value if a and a.grade else ""),
@@ -167,6 +168,7 @@ def build(
             if verdict is Verdict.UNDETERMINED:
                 undetermined.append({
                     "항목": rid,
+                    "항목명": _short_title(rule),
                     "영역": cat_name,
                     "사유": reason.value if reason else "",
                     "다음 담당": owner or "",
@@ -353,25 +355,27 @@ def to_markdown(bundle: ReportBundle) -> str:
             "",
             "> 이 표는 이 진단이 **무엇을 판정하지 못했는지** 밝히는 부분입니다.",
             "",
-            "| 항목 | 영역 | 사유 | 다음 담당 | 조치 |",
-            "|---|---|---|---|---|",
+            "| 항목 | 쉬운 설명 | 영역 | 사유 | 다음 담당 | 조치 |",
+            "|---|---|---|---|---|---|",
         ]
         for u in bundle.undetermined:
             hint = u["안내"].replace("|", "／")
             lines.append(
-                f"| {u['항목']} | {u['영역']} | {u['사유']} | {u['다음 담당']} | {hint} |"
+                f"| {u['항목']} | {u['항목명'].replace('|', '／')} | {u['영역']} | "
+                f"{u['사유']} | {u['다음 담당']} | {hint} |"
             )
         lines.append("")
 
     lines += [
         "## 별표5 항목별 판정",
         "",
-        "| 영역 | 항목 | 구분 | 판정 | 등급 | 사유 | 다음 담당 | 출처 |",
-        "|---|---|---|---|---|---|---|---|",
+        "| 영역 | 항목 | 쉬운 설명 | 구분 | 판정 | 등급 | 사유 | 다음 담당 | 출처 |",
+        "|---|---|---|---|---|---|---|---|---|",
     ]
     for row in bundle.matrix:
         lines.append(
-            f"| {row['영역']} | {row['항목']} | {row['구분']} | {row['판정']} | "
+            f"| {row['영역']} | {row['항목']} | {row['항목명'].replace('|', '／')} | "
+            f"{row['구분']} | {row['판정']} | "
             f"{row['등급']} | {row['사유']} | {row['다음 담당']} | {row['출처']} |"
         )
 

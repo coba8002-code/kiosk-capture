@@ -164,6 +164,30 @@ input:focus-visible, select:focus-visible, button:focus-visible, .tile:focus-vis
 .shot-label { font-size: 14.5px; font-weight: 600; margin: 2px 0 3px; }
 .shot-note { font-size: 12.5px; color: var(--muted); line-height: 1.5; }
 .shot-req { font-size: 12px; color: var(--c); margin-top: 4px; }
+.marker-need { display:inline-flex;align-items:center;margin-top:7px;padding:4px 8px;
+  border-radius:6px;font-size:11.5px;font-weight:700; }
+.marker-need.yes { background:var(--c-bg);color:var(--c); }
+.marker-need.no { background:var(--surface-2);color:var(--muted); }
+.marker-guide { display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center;
+  background:#FFF9E8;border:2px solid var(--accent);border-radius:12px;padding:13px;margin-top:10px; }
+.marker-guide.compact { grid-template-columns:86px 1fr;padding:9px;gap:10px; }
+.marker-picture svg { width:100%;display:block; }
+.marker-copy b { display:block;font-size:14px;color:var(--deep-ink); }
+.marker-copy p { margin:4px 0;font-size:13px;line-height:1.5;color:var(--ink-2); }
+.marker-copy small { display:block;font-size:11.5px;line-height:1.45;color:var(--muted); }
+.guide-overlay { position:fixed;inset:0;z-index:90;background:rgba(7,20,33,.76);
+  display:flex;align-items:center;justify-content:center;padding:18px; }
+.guide-dialog { width:min(560px,100%);max-height:92vh;overflow:auto;background:var(--surface);
+  border-radius:16px;padding:20px;box-shadow:0 18px 60px rgba(0,0,0,.35); }
+.guide-dialog h2 { margin:5px 0 14px;font-size:23px; }
+.guide-kicker { color:var(--c);font-family:var(--mono);font-size:12px;font-weight:700; }
+.guide-actions { display:grid;grid-template-columns:1fr 1.6fr;gap:9px;margin-top:16px; }
+.shot-meta { margin-top:12px;padding:12px;background:var(--surface-2);border-radius:10px;
+  border:1px solid var(--line);display:grid;gap:10px; }
+.shot-meta-title { font-weight:800;font-size:14px;color:var(--deep); }
+.meta-field { display:grid;gap:5px;font-size:12px;color:var(--muted); }
+.meta-auto { min-height:42px;padding:9px 11px;background:var(--surface);border:1px solid var(--line);
+  border-radius:8px;color:var(--ink-2); }
 .thumbs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 9px; }
 .thumb { position: relative; width: 62px; height: 62px; border-radius: 8px; overflow: hidden;
   border: 1px solid var(--line); background: var(--surface-2); }
@@ -177,9 +201,15 @@ input:focus-visible, select:focus-visible, button:focus-visible, .tile:focus-vis
   font-size: 9px; text-align: center; padding: 2px 0; color: #fff; }
 .thumb .mk.ok { background: rgba(30,122,77,.9); }
 .thumb .mk.no { background: rgba(179,38,30,.9); }
+.thumb .retake { position:absolute;top:0;left:0;right:0;background:rgba(179,38,30,.94);
+  color:#fff;font-size:9px;font-weight:800;text-align:center;padding:2px; }
+.retake-row { margin:7px 0;font-size:13.5px;color:var(--bad); }
 
 /* 버튼 */
 button { font-family: var(--f); }
+button { transition:transform .08s ease,filter .08s ease,box-shadow .08s ease; }
+button:active:not([disabled]) { transform:scale(.97);filter:brightness(.92);
+  box-shadow:inset 0 0 0 2px rgba(23,56,92,.18); }
 .btn {
   min-height: var(--tap); border-radius: 11px; border: 1px solid var(--line);
   background: var(--surface); color: var(--ink-2); font-size: 15px; font-weight: 600;
@@ -204,6 +234,17 @@ button { font-family: var(--f); }
 .answers button.yes[aria-pressed="true"] { background: var(--ok-bg); border-color: var(--ok); color: var(--ok); }
 .answers button.no[aria-pressed="true"] { background: var(--bad-bg); border-color: var(--bad); color: var(--bad); }
 .answers button.na[aria-pressed="true"] { background: var(--surface-2); border-color: var(--muted); color: var(--muted); }
+.answer-state { margin-top:8px;font-size:12.5px;font-weight:700;color:var(--muted); }
+.owner-card:has(.answers button[aria-pressed="true"]) .answer-state { color:var(--deep); }
+
+@media (max-width:520px) {
+  .marker-guide,.marker-guide.compact { grid-template-columns:92px 1fr; }
+  .guide-actions { grid-template-columns:1fr; }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  *,*::before,*::after { scroll-behavior:auto!important;transition:none!important;animation:none!important; }
+}
 
 /* 안내 박스 */
 .note { border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.6; }

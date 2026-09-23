@@ -721,6 +721,7 @@ def test_csv_row_count_matches_matrix(bundle):
 
 def test_undetermined_csv_lists_next_owner(bundle):
     t = rexport.undetermined_csv(bundle)
+    assert "항목명" in t
     assert "다음 담당" in t
     assert "전문 실측" in t
 
@@ -730,6 +731,8 @@ def test_json_export_round_trips(bundle):
     data = _json.loads(rexport.to_json(bundle))
     assert data["device_id"] == "TEST-001"
     assert len(data["matrix"]) == 40
+    assert all(row["항목명"] for row in data["matrix"])
+    assert all(row["항목명"] for row in data["undetermined"])
     assert "법정 적합성 인증이 아닙니다" in data["scope_note"]
 
 

@@ -118,7 +118,10 @@ def to_pdf(html: Path, pdf: Path) -> tuple[bool, str]:
     if browser is None:
         return False, "Edge 나 Chrome 을 찾지 못했습니다"
 
-    with tempfile.TemporaryDirectory(prefix="kfa-pdf-") as td:
+    # Edge의 Crashpad가 종료 직후 프로필 파일을 잠깐 붙잡는 경우가 있다.
+    # PDF는 이미 정상 생성됐는데 임시 폴더 정리만 실패해 전체 작업이 오류로
+    # 보이면 사용자는 결과까지 실패한 것으로 오해한다.
+    with tempfile.TemporaryDirectory(prefix="kfa-pdf-", ignore_cleanup_errors=True) as td:
         tmp = Path(td)
         src, out = tmp / "manual.html", tmp / "manual.pdf"
         src.write_bytes(html.read_bytes())
