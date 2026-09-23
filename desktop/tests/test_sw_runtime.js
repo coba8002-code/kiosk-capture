@@ -22,7 +22,7 @@ vm.runInNewContext(fs.readFileSync('app/sw.js','utf8'),context);
   handlers.install({waitUntil:p=>pending=p}); await pending;
   assert(shell.includes('./protocol.json'));
   handlers.activate({waitUntil:p=>pending=p}); await pending;
-  assert.deepEqual(deleted,['kfa-app-v3']);
+  assert.deepEqual(deleted,['kfa-app-v3', 'kfa-app-v4']);
   handlers.fetch({request:{method:'GET',url:'https://example.com/kiosk/protocol.json'},
     respondWith:p=>pending=p});
   assert.equal(await pending,cached);

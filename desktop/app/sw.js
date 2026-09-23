@@ -24,7 +24,9 @@
  * protocol.json 만은 네트워크 우선이다. 촬영 목록과 점주 문항이 여기 들어 있어,
  * 낡은 것을 쓰면 앱과 엔진이 갈라진다. 실패하면 캐시로 물러난다.
  */
-const CACHE = 'kfa-app-v4';
+// 배포본의 화면·프로토콜 구조가 바뀌면 반드시 올린다. 같은 이름을 재사용하면
+// 기존 사용자는 첫 새로고침에서 낡은 app.js를 한 번 더 받게 된다.
+const CACHE = 'kfa-app-v5';
 const SHELL = ['./', './index.html', './style.css', './app.js', './zip.js',
                './icon.svg', './manifest.webmanifest', './protocol.json'];
 
