@@ -179,7 +179,7 @@ def next_steps() -> None:
     pending = []
     if l2["built"] and not l2["configured"]:
         n = sum(1 for i in d["items"] if i["state"].startswith("L2"))
-        pending.append(f"L2 판정 {n}항목 — 코드는 있고 공급자만 켜면 됩니다 (API 키)")
+        pending.append(f"L2 판정 {n}항목 — 사내 AI 서버 또는 직접 API 공급자를 설정하면 됩니다")
     if ocr["built"] and not ocr["configured"]:
         pending.append("OCR 판정 3.g — 코드는 있고 엔진만 설치하면 됩니다")
     elif ocr["configured"] and not ocr["calibrated"]:

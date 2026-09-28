@@ -47,7 +47,7 @@ if not getattr(sys, "frozen", False):
 from engine.paths import app_dir, output_dir, resource_dir   # noqa: E402
 from tools import easy                                       # noqa: E402
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 DEFAULT_PORT = 8097          # 촬영 앱은 8099. 겹치지 않게 둔다.
 DEFAULT_WEB_URL = "https://coba8002-code.github.io/kiosk-capture/"
 
@@ -94,7 +94,9 @@ def _child_env(overrides: dict[str, str] | None = None) -> dict:
     # 화면에서 받은 키는 이 자식 프로세스 메모리에만 넣는다. 파일·레지스트리·로그에
     # 쓰지 않는다. 임의 환경변수 주입을 막기 위해 허용 키도 여기서 못 박는다.
     for key, value in (overrides or {}).items():
-        if key in {"ANTHROPIC_API_KEY", "KFA_L2_PROVIDER", "KFA_L2_MODEL"}:
+        if key in {"ANTHROPIC_API_KEY", "KFA_L2_PROVIDER", "KFA_L2_MODEL",
+                   "KFA_GATEWAY_URL", "KFA_GATEWAY_TOKEN",
+                   "KFA_GATEWAY_TIMEOUT", "KFA_GATEWAY_ALLOW_HTTP"}:
             env[key] = value
     return env
 
@@ -208,21 +210,39 @@ def start_job(key: str, extra: list[str] | None = None,
             return None, str(exc)
         steps = [["ingest", str(target)]]
         if ai and ai.get("enabled"):
+            mode = str(ai.get("mode", "gateway")).strip().lower()
             api_key = str(ai.get("api_key", "")).strip()
             model = str(ai.get("model", "")).strip()
             if not ai.get("consent"):
                 return None, "외부 AI로 촬영물을 전송한다는 확인이 필요합니다."
-            if not api_key:
-                return None, "Anthropic API 키를 입력하세요."
-            if len(api_key) > 300 or any(c in api_key for c in "\r\n"):
-                return None, "API 키 형식이 올바르지 않습니다."
             if len(model) > 100 or any(c in model for c in "\r\n"):
                 return None, "모델 이름 형식이 올바르지 않습니다."
-            steps[0] += ["--l2", "anthropic", "--yes"]
-            env_overrides = {"ANTHROPIC_API_KEY": api_key,
-                             "KFA_L2_PROVIDER": "anthropic"}
-            if model:
-                env_overrides["KFA_L2_MODEL"] = model
+            if mode == "gateway":
+                url = os.environ.get("KFA_GATEWAY_URL", "").strip()
+                token = os.environ.get("KFA_GATEWAY_TOKEN", "").strip()
+                if not url or not token:
+                    return None, (
+                        "사내 AI 서버가 이 PC에 설정되지 않았습니다. "
+                        "관리자가 setup-client.ps1을 한 번 실행해야 합니다.")
+                steps[0] += ["--l2", "gateway", "--yes"]
+                env_overrides = {"KFA_L2_PROVIDER": "gateway",
+                                 "KFA_GATEWAY_URL": url,
+                                 "KFA_GATEWAY_TOKEN": token}
+                for name in ("KFA_GATEWAY_TIMEOUT", "KFA_GATEWAY_ALLOW_HTTP"):
+                    if os.environ.get(name):
+                        env_overrides[name] = os.environ[name]
+            elif mode == "anthropic":
+                if not api_key:
+                    return None, "Anthropic API 키를 입력하세요."
+                if len(api_key) > 300 or any(c in api_key for c in "\r\n"):
+                    return None, "API 키 형식이 올바르지 않습니다."
+                steps[0] += ["--l2", "anthropic", "--yes"]
+                env_overrides = {"ANTHROPIC_API_KEY": api_key,
+                                 "KFA_L2_PROVIDER": "anthropic"}
+                if model:
+                    env_overrides["KFA_L2_MODEL"] = model
+            else:
+                return None, "알 수 없는 AI 연결 방식입니다."
     job = Job(key, steps, spec["title"], env_overrides)
     STATE["job"] = job
     threading.Thread(target=job.run, daemon=True).start()
@@ -371,8 +391,8 @@ button[disabled]{opacity:.45;cursor:not-allowed}
 .ai-strip b{display:block;font-size:18px}.ai-strip span{color:var(--muted);font-size:14px}
 .form{max-width:650px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px}
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:18px}.field label{font-weight:800}
-.field input{font:inherit;min-height:48px;border:2px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--ink);background:#fff}
-.field input:focus{outline:3px solid var(--a-bg);border-color:var(--a)}
+.field input,.field select{font:inherit;min-height:48px;border:2px solid var(--line);border-radius:9px;padding:9px 12px;color:var(--ink);background:#fff}
+.field input:focus,.field select:focus{outline:3px solid var(--a-bg);border-color:var(--a)}
 .check{display:flex;gap:11px;align-items:flex-start;margin:18px 0}.check input{width:24px;height:24px;flex:none}
 .privacy-lock{border-left:5px solid var(--deep);padding:12px 15px;background:var(--surface-2);font-size:14px}
 .hide{display:none}
@@ -428,14 +448,16 @@ def page(token: str) -> str:
 
   <section id="ai" class="hide">
     <h2>AI 보조판단 설정</h2>
-    <p class="sub">API 키는 이 화면을 닫을 때 사라지며 파일이나 로그에 저장하지 않습니다.</p>
+    <p class="sub">권장 방식은 사내 AI 서버입니다. 공급자 API 키는 서버에만 두고 진단 PC에는 배포하지 않습니다.</p>
     <div class="form">
       <div class="privacy-lock"><b>AI의 역할</b><br>촬영물에서 위반 후보를 골라 검토자에게 보냅니다. AI는 ‘부적합’을 확정하지 않으며, 모델의 ‘적합’도 최종 적합으로 인정하지 않습니다.</div>
-      <div class="field" style="margin-top:18px"><label for="apikey">Anthropic API 키</label>
+      <div class="field" style="margin-top:18px"><label for="aimode">연결 방식</label>
+        <select id="aimode" onchange="aiModeChanged()"><option value="gateway">사내 AI 서버 · 권장</option><option value="anthropic">Anthropic 직접 연결 · 관리자용</option></select></div>
+      <div id="direct-fields"><div class="field"><label for="apikey">Anthropic API 키</label>
         <input id="apikey" type="password" autocomplete="off" spellcheck="false" placeholder="sk-ant-…"></div>
       <div class="field"><label for="aimodel">모델 이름</label>
-        <input id="aimodel" type="text" autocomplete="off" spellcheck="false" placeholder="계정에서 사용할 수 있는 모델 이름"></div>
-      <label class="check"><input id="aiconsent" type="checkbox"><span>가림 처리 여부를 다시 확인했습니다. 진단할 때 촬영 이미지가 Anthropic API로 전송되는 것에 동의합니다.</span></label>
+        <input id="aimodel" type="text" autocomplete="off" spellcheck="false" placeholder="계정에서 사용할 수 있는 모델 이름"></div></div>
+      <label class="check"><input id="aiconsent" type="checkbox"><span>가림 처리 여부를 다시 확인했습니다. 진단할 때 촬영 이미지가 사내 AI 서버를 거쳐 외부 Anthropic API로 전송되는 것에 동의합니다.</span></label>
       <div id="aistatus" class="note">연결 상태를 확인하는 중…</div>
       <div class="row"><button class="btn primary" onclick="aiSave()">이번 실행에만 사용</button>
         <button class="btn ghost" onclick="aiOff()">AI 끄기</button>
@@ -484,7 +506,7 @@ def page(token: str) -> str:
 <script>
 const T = "{token}";
 let seen = 0, timer = null, cur = null;
-let aiConfig = {{enabled:false, api_key:'', model:'', consent:false}};
+let aiConfig = {{enabled:false, mode:'gateway', api_key:'', model:'', consent:false}};
 
 function api(p, body) {{
   return fetch(p + (p.includes('?') ? '&' : '?') + 't=' + T,
@@ -577,29 +599,36 @@ function stop() {{ api('/stop', {{}}).then(poll); }}
 function serve() {{ job('serve'); }}
 function aiOpen() {{
   show('ai');
+  document.getElementById('aimode').value = aiConfig.mode || 'gateway';
   document.getElementById('apikey').value = aiConfig.api_key;
   document.getElementById('aimodel').value = aiConfig.model;
   document.getElementById('aiconsent').checked = aiConfig.consent;
+  aiModeChanged();
   api('/ai/status').then(r => {{
-    document.getElementById('aistatus').className = r.sdk ? 'okbox' : 'note';
-    document.getElementById('aistatus').textContent = r.sdk
-      ? 'AI 연결 모듈 준비됨 · API 키를 입력하면 진단 때만 사용합니다.'
-      : 'AI 연결 모듈이 없습니다. 이 배포본에서는 AI를 켤 수 없습니다.';
+    document.getElementById('aistatus').className = r.gateway ? 'okbox' : 'note';
+    document.getElementById('aistatus').textContent = r.gateway
+      ? '사내 AI 서버 설정됨 · ' + r.gateway_host
+      : '사내 AI 서버 미설정 · 관리자가 PC 설정 스크립트를 한 번 실행해야 합니다.';
   }});
 }}
+function aiModeChanged() {{
+  const direct = document.getElementById('aimode').value === 'anthropic';
+  document.getElementById('direct-fields').classList.toggle('hide', !direct);
+}}
 function aiSave() {{
+  const mode = document.getElementById('aimode').value;
   const key = document.getElementById('apikey').value.trim();
   const consent = document.getElementById('aiconsent').checked;
-  if (!key) {{ alert('API 키를 입력하세요.'); return; }}
+  if (mode === 'anthropic' && !key) {{ alert('API 키를 입력하세요.'); return; }}
   if (!consent) {{ alert('외부 전송 내용을 확인하고 동의란을 선택하세요.'); return; }}
-  aiConfig = {{enabled:true, api_key:key,
+  aiConfig = {{enabled:true, mode:mode, api_key:mode === 'anthropic' ? key : '',
     model:document.getElementById('aimodel').value.trim(), consent:true}};
-  document.getElementById('aibadge').textContent = '켜짐 · 이번 실행만';
-  document.getElementById('aidesc').textContent = '진단할 때 촬영 이미지가 외부 API로 전송됩니다. 검토자가 최종 확정합니다.';
+  document.getElementById('aibadge').textContent = mode === 'gateway' ? '켜짐 · 사내 서버' : '켜짐 · 직접 연결';
+  document.getElementById('aidesc').textContent = '진단할 때 촬영 이미지가 사내 서버를 거쳐 AI로 전송됩니다. 검토자가 최종 확정합니다.';
   home(); msg('<div class="okbox">AI 보조판단을 켰습니다. 이제 ③ 진단하기를 실행하세요.</div>');
 }}
 function aiOff() {{
-  aiConfig = {{enabled:false, api_key:'', model:'', consent:false}};
+  aiConfig = {{enabled:false, mode:'gateway', api_key:'', model:'', consent:false}};
   document.getElementById('apikey').value = '';
   document.getElementById('aibadge').textContent = '꺼짐';
   document.getElementById('aidesc').textContent = '기본은 꺼져 있습니다. 켜면 촬영물에서 위반 후보를 선별합니다.';
@@ -715,9 +744,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
         elif path == "/bundles":
             self._json({"items": _bundle_list()})
         elif path == "/ai/status":
+            gateway_url = os.environ.get("KFA_GATEWAY_URL", "").strip()
             self._json({"ok": True,
                         "sdk": importlib.util.find_spec("anthropic") is not None,
-                        "key_in_environment": bool(os.environ.get("ANTHROPIC_API_KEY"))})
+                        "key_in_environment": bool(os.environ.get("ANTHROPIC_API_KEY")),
+                        "gateway": bool(gateway_url and os.environ.get("KFA_GATEWAY_TOKEN")),
+                        "gateway_host": urllib.parse.urlparse(gateway_url).hostname or ""})
         elif path == "/review":
             self._send(200, (resource_dir() / 'app' / 'review.html').read_bytes(), 'text/html; charset=utf-8')
         elif path == '/review/media':

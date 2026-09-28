@@ -35,7 +35,8 @@ python setup_check.py
 ```
 
 > 설치·현장 준비·개발 순서는 **[OPERATIONS.md](OPERATIONS.md)** 에 정리돼 있다.
-> 서버·DB·클라우드 계정은 **지금 단계에서 필요 없다.** 전부 로컬에서 돈다.
+> 기본 계측·OCR·검토·보고는 서버 없이 로컬에서 동작한다. 선택 기능인 L2 AI는
+> 공급자 키를 진단 PC에 배포하지 않도록 `server/`의 사내 중계 서버를 권장한다.
 
 ```bash
 python tools/validate_rules.py --coverage
@@ -69,6 +70,7 @@ python tools/demo_report.py
 | `tools/check_ks_copyright.py` | KS 본문 유출 차단 — CI 게이트 |
 | `tools/calibrate_text_height.py` | 문자 높이 계수 교정 (폰트 메트릭 실측) |
 | `tools/make_field_sheet.py` | 현장 촬영 체크리스트 생성 — 앱 없이 현장에 나갈 수 있다 |
+| `server/` | 공급자 API 키를 서버에만 보관하는 사내 AI 중계 서버·Docker 배포본 |
 | `setup_check.py` | 설치 점검 — 환경·패키지·게이트를 한 번에 |
 | `OPERATIONS.md` | **운영 가이드 — 무엇을 설치하고 무엇을 해야 하나** |
 | `tools/make_marker.py` | 인쇄용 기준 마커 카드 생성 (자기검증 포함) |

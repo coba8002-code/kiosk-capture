@@ -6,6 +6,8 @@ from pathlib import Path
 
 from engine import pipeline, quality, rules
 from engine.media import audio_quality
+from engine.l2.gateway_provider import GatewayProvider, _judgment
+from engine.verdict import Verdict
 from tools import panel
 
 
@@ -63,12 +65,12 @@ def test_field_quality_reports_missing_sets_and_audio(tmp_path):
 
 
 def test_panel_ai_key_is_session_only_and_never_in_page():
-    key = "sk-ant-secret-test"
+    key = "test-api-key-never-save"
     env = panel._child_env({"ANTHROPIC_API_KEY": key, "UNSAFE": "no"})
     assert env["ANTHROPIC_API_KEY"] == key
     assert "UNSAFE" not in env
     page = panel.page("token")
-    assert "API 키는 이 화면을 닫을 때 사라지며" in page
+    assert "공급자 API 키는 서버에만" in page
     assert key not in page
 
 
@@ -78,6 +80,46 @@ def test_panel_rejects_ai_without_consent(tmp_path):
         "enabled": True, "api_key": "sk-ant-test", "consent": False})
     assert job is None
     assert "확인이 필요" in why
+
+
+def test_gateway_requires_https_and_token(monkeypatch):
+    monkeypatch.delenv("KFA_GATEWAY_ALLOW_HTTP", raising=False)
+    p = GatewayProvider("http://10.0.0.8:8787", "x" * 32)
+    assert not p.available()[0]
+    p = GatewayProvider("https://kfa-ai.company.internal", "x" * 32)
+    assert p.available()[0]
+    assert not GatewayProvider("https://kfa-ai.company.internal", "").available()[0]
+
+
+def test_gateway_response_is_strict():
+    good = _judgment({"verdict": "위반", "confidence": .8,
+                      "rationale": "초점 표시가 보이지 않습니다.",
+                      "cited": ["one.jpg"], "provider": "internal/test"},
+                     ["one.jpg"])
+    assert good and good.verdict is Verdict.FAIL
+    assert _judgment({"verdict": "부적합", "confidence": .8,
+                      "rationale": "x", "cited": ["one.jpg"]}, ["one.jpg"]) is None
+    assert _judgment({"verdict": "위반", "confidence": .8,
+                      "rationale": "x", "cited": ["not-sent.jpg"]}, ["one.jpg"]) is None
+
+
+def test_panel_gateway_uses_server_config_not_provider_key(tmp_path, monkeypatch):
+    (tmp_path / "manifest.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setenv("KFA_GATEWAY_URL", "https://kfa-ai.company.internal")
+    monkeypatch.setenv("KFA_GATEWAY_TOKEN", "g" * 64)
+    class NoThread:
+        def start(self):
+            pass
+    monkeypatch.setattr(panel.threading, "Thread", lambda **kwargs: NoThread())
+    panel.STATE["job"] = None
+    job, why = panel.start_job("ingest", [str(tmp_path)], {
+        "enabled": True, "mode": "gateway", "consent": True,
+        "api_key": "", "model": ""})
+    assert not why and job is not None
+    assert job.steps[0][-3:] == ["--l2", "gateway", "--yes"]
+    assert "ANTHROPIC_API_KEY" not in job.env_overrides
+    assert job.env_overrides["KFA_GATEWAY_TOKEN"] == "g" * 64
+    panel.STATE["job"] = None
 
 
 def test_bundle_root_is_absolute_even_when_input_is_relative(tmp_path, monkeypatch):

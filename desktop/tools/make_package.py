@@ -49,7 +49,7 @@ if not getattr(sys, "frozen", False):
 
 from engine.paths import resource_dir                       # noqa: E402
 
-VERSION = "0.4.0"
+VERSION = "0.5.0"
 PKG_NAME = f"KFA-{VERSION}"
 
 # 소스에서 제외할 것 (경로 조각 또는 glob)
@@ -149,7 +149,7 @@ def copy_source(src_root: Path, dst: Path) -> int:
         manual_dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(manual_source, manual_dest)
         n += 1
-    for item in ("engine", "tools", "rules", "app", "tests"):
+    for item in ("engine", "tools", "rules", "app", "tests", "server"):
         s = src_root / item
         if not s.exists():
             continue
@@ -212,7 +212,7 @@ START_HERE = """\
   사용자매뉴얼.pdf      설치 · 설정 · 현장 사용법
   사용자매뉴얼.html     같은 내용. 브라우저에서 보기 편합니다
   인쇄물/               ① 준비하기가 알아서 만들지만, 미리 인쇄해도 됩니다
-  소스/                 문자 높이(3.g) 자동 판정에 필요 — 아래 설명
+  소스/                 개발·감사 및 사내 AI 서버 설치용
 
 ■ 마커 카드를 인쇄할 때
 
@@ -233,18 +233,11 @@ START_HERE = """\
 
 ■ 소스 폴더는 왜 있나
 
-  실행 파일에는 OCR 엔진이 들어 있지 않습니다. 모델 파일이 함께 들어가지
-  않아 실행 중에 깨지기 때문에 일부러 뺐습니다.
+  실행 파일에는 한글 OCR이 이미 들어 있습니다. 소스는 개발·감사와 사내 AI
+  중계 서버 설치를 위해 함께 제공합니다. 일반 현장 사용자는 열 필요가 없습니다.
 
-  문자 높이(3.g)까지 자동으로 판정하려면 파이썬을 설치하고 소스로 돌립니다.
-
-      cd 소스
-      pip install -r requirements.txt
-      pip install rapidocr        (한글 OCR)
-      python kfa.py calibrate-ocr (한 번만)
-      python kfa.py               (같은 조작판이 열립니다)
-
-  나머지 기능은 실행 파일에서 전부 동일하게 동작합니다.
+  사내 AI 서버 관리자는 `소스/server/README.md` 순서대로 Docker에 배포합니다.
+  Anthropic API 키는 서버 secret에만 두고 진단 PC에는 복사하지 않습니다.
 
 ■ 넣지 않은 것
 
@@ -346,7 +339,7 @@ def main() -> int:
         '4. 검토 · 실측 입력에서 숫자·오차·조건을 입력하고 결과를 확인하세요.\n'
         '5. 검토 저장 후 보고서를 다시 만드세요. 기존 검토를 이어가려면 ZIP이 아닌 가져온 폴더를 선택하세요.\n\n'
         '자세한 설치·사용법: 사용자매뉴얼.pdf (10쪽) 또는 사용자매뉴얼.html\n'
-        '기본 EXE 사용에는 Python과 API 키가 필요 없습니다. OCR은 선택 설치이며 음성·영상 자동 의미 분석은 미지원입니다.\n'
+        '기본 EXE 사용에는 Python과 API 키가 필요 없습니다. 한글 OCR은 내장되어 있고 AI는 사내 중계 서버를 권장합니다.\n'
         '이전 설치의 assets와 검토 기록은 보존하세요. 이번 묶음에는 사용자 촬영 자료와 API 키·인증서 개인키를 넣지 않았습니다.\n'
         '이 도구와 보고서는 법정 적합성 인증이 아닙니다.\n', encoding="utf-8")
     print("  ★ 시작하세요.txt")

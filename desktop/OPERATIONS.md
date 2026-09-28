@@ -276,15 +276,17 @@ CSV 는 BOM 이 붙어 있어 한글·엑셀에서 인코딩이 깨지지 않는
 색 단독 사용, 레이블 적절성, 용어 난이도, 한 손 조작 가능 여부 등.
 지금은 공급자가 설정되지 않아 이 항목들이 검토자에게 넘어가고 있을 뿐이다.
 
-`anthropic` SDK 는 **이미 설치돼 있다.** 환경변수 두 개만 잡으면 된다.
+권장 구성은 **사내 AI 중계 서버**다. 공급자 API 키는 서버 Docker secret에만 두고,
+진단 PC에는 사내 서버 주소와 회전 가능한 접근 토큰만 설정한다.
 
-```bash
-set ANTHROPIC_API_KEY=sk-ant-...
-set KFA_L2_PROVIDER=anthropic
-KFA.exe ingest "C:\진단\번들폴더" --l2
+```powershell
+cd 소스\server
+.\setup-client.ps1 -ServerUrl 'https://kfa-ai.company.internal' `
+  -AccessToken (Read-Host '사내 접근 토큰' -AsSecureString)
+KFA.exe ingest "C:\진단\번들폴더" --l2 gateway
 ```
 
-- **필요한 것**: **LLM API 키 1개**. 이게 이 프로젝트에서 유일하게 필요한 외부 계정이다
+- **필요한 것**: 사내 AI 중계 서버에 보관할 **Anthropic API 키 1개**. 진단 PC에는 키를 배포하지 않는다. 서버 설치는 `server/README.md`를 따른다.
 - **비용 감각**: 진단 1건에 화면 20장 + 판정 25항목 기준으로 **건당 수백 원~수천 원** 수준.
   실증 2곳이면 무시할 수 있는 금액이다
 - **기본은 꺼짐이다.** `--l2` 를 붙이지 않으면 사진이 밖으로 나가지 않는다.
@@ -399,7 +401,7 @@ KFA.exe calibrate-ocr       # 이미 교정됨
 
 - [ ] `BUILD_SPEC_키오스크_현장진단_플랫폼.md` — 착수 전 필독
 - [ ] 우선순위 1(파이프라인)부터. 서버·DB 는 나중이다
-- [ ] LLM API 키 발급 — 우선순위 3 시작 전까지
+- [ ] Anthropic API 키 발급 후 사내 서버 Docker secret 등록 — 진단 PC에는 복사 금지
 
 **확인이 필요한 것 (외부)**
 

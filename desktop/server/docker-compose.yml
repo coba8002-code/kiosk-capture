@@ -1,0 +1,38 @@
+services:
+  kfa-ai-gateway:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    image: kfa-ai-gateway:0.5.0
+    restart: unless-stopped
+    environment:
+      ANTHROPIC_API_KEY_FILE: /run/secrets/anthropic_api_key
+      KFA_GATEWAY_TOKEN_FILE: /run/secrets/gateway_token
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5}
+      KFA_MAX_REQUESTS_PER_MINUTE: ${KFA_MAX_REQUESTS_PER_MINUTE:-30}
+      KFA_MAX_CONCURRENCY: ${KFA_MAX_CONCURRENCY:-4}
+    secrets:
+      - anthropic_api_key
+      - gateway_token
+    ports:
+      - "127.0.0.1:8787:8787"
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8787/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+secrets:
+  anthropic_api_key:
+    file: ./secrets/anthropic_api_key.txt
+  gateway_token:
+    file: ./secrets/gateway_token.txt
+

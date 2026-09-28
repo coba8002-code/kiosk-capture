@@ -59,6 +59,7 @@ hiddenimports = [
     # 실행파일에도 SDK를 넣는다. 키는 어떤 배포 파일에도 넣지 않는다.
     "engine.l2", "engine.l2.provider", "engine.l2.prompt",
     "engine.l2.judge", "engine.l2.stub", "engine.l2.anthropic_provider",
+    "engine.l2.gateway_provider",
     *collect_submodules("anthropic"),
     # OCR 계층. 엔진(rapidocr/paddleocr/tesseract)은 동봉하지 않는다 —
     # PaddleOCR 만 해도 PyTorch 2GB 를 끌고 온다.

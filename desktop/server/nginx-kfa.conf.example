@@ -1,0 +1,31 @@
+# /etc/nginx/conf.d/kfa-ai.conf 예시. 회사 도메인과 인증서 경로로 바꾸십시오.
+limit_req_zone $binary_remote_addr zone=kfa_ai:10m rate=30r/m;
+
+server {
+    listen 443 ssl http2;
+    server_name kfa-ai.company.internal;
+
+    ssl_certificate     /etc/ssl/company/kfa-ai.crt;
+    ssl_certificate_key /etc/ssl/company/kfa-ai.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    client_max_body_size 26m;
+    access_log /var/log/nginx/kfa-ai-access.log combined;
+    error_log  /var/log/nginx/kfa-ai-error.log warn;
+
+    location / {
+        limit_req zone=kfa_ai burst=8 nodelay;
+        proxy_pass http://127.0.0.1:8787;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_connect_timeout 10s;
+        proxy_read_timeout 150s;
+        proxy_send_timeout 150s;
+        add_header Cache-Control "no-store" always;
+        add_header X-Content-Type-Options "nosniff" always;
+    }
+}
+

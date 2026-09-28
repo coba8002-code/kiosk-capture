@@ -125,7 +125,10 @@ def resolve(name: str | None = None) -> Provider:
     if key in ("anthropic", "claude"):
         from .anthropic_provider import AnthropicProvider
         return AnthropicProvider()
+    if key in ("gateway", "internal", "server"):
+        from .gateway_provider import GatewayProvider
+        return GatewayProvider()
     if key in ("echo", "stub", "test"):
         from .stub import EchoProvider
         return EchoProvider()
-    raise ValueError(f"모르는 L2 공급자입니다: {key!r} (anthropic | echo)")
+    raise ValueError(f"모르는 L2 공급자입니다: {key!r} (gateway | anthropic | echo)")

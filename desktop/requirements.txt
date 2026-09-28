@@ -22,8 +22,9 @@ rapidocr>=3.4            # 배포 EXE에도 PP-OCRv5 korean 모델과 함께 포
 # 없어도 엔진은 동작한다. 없으면 해당 항목이 '검토자'로 넘어갈 뿐이다.
 # 실행 파일에는 동봉하지 않는다 — 쓰는 사람이 필요할 때 넣는다.
 #   pip install anthropic
-#   set ANTHROPIC_API_KEY=...   /   set KFA_L2_PROVIDER=anthropic
-anthropic>=0.40          # 조작판에서 API 키를 넣으면 L2 위반 후보 선별 사용
+# 권장: 사내 중계 서버가 이 패키지를 사용하고 진단 PC는 gateway 공급자를 쓴다.
+# 직접 연결이 필요한 관리자만 ANTHROPIC_API_KEY를 진단 PC에 입력한다.
+anthropic>=0.70          # 사내 중계 서버 또는 직접 연결용
 
 # ── 개발 ────────────────────────────────────────────────────
 pytest>=8.0
