@@ -238,9 +238,19 @@ button:active:not([disabled]) { transform:scale(.97);filter:brightness(.92);
 .owner-card:has(.answers button[aria-pressed="true"]) .answer-state { color:var(--deep); }
 
 @media (max-width:520px) {
-  .marker-guide,.marker-guide.compact { grid-template-columns:92px 1fr; }
+  .marker-guide,.marker-guide.compact { grid-template-columns:1fr; }
   .guide-actions { grid-template-columns:1fr; }
 }
+
+.marker-guide,.marker-guide.compact { grid-template-columns:1fr; }
+.marker-picture { width:100%;max-width:420px;margin:0 auto; }
+.marker-copy .marker-count { font-weight:700;font-size:15px;color:var(--ink); }
+.shot-actions { display:flex;flex-wrap:wrap;gap:8px; }
+.tile[aria-pressed="true"], .answers button[aria-pressed="true"] {
+  background:#17385C!important;color:#fff!important;border:3px solid #F2B705!important;
+  box-shadow:0 0 0 2px #17385C;font-weight:800;
+}
+.tile[aria-pressed="true"] small { color:#fff; }
 
 @media (prefers-reduced-motion:reduce) {
   *,*::before,*::after { scroll-behavior:auto!important;transition:none!important;animation:none!important; }

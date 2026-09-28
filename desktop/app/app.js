@@ -35,6 +35,7 @@ const $ = (s) => document.querySelector(s);
 const el = (tag, attrs = {}, ...kids) => {
   const n = document.createElement(tag);
   for (const [k, v] of Object.entries(attrs)) {
+    if (k.startsWith('aria-')) { n.setAttribute(k, String(v)); continue; }
     if (v === null || v === undefined || v === false) continue;
     if (k === 'class') n.className = v;
     else if (k === 'html') n.innerHTML = v;
@@ -195,7 +196,9 @@ function trackCounts() {
 
 /* ─────────────────────────── 화면 ─────────────────────────── */
 
-function render() {
+function render(resetScroll = false) {
+  const scroll = $('#view').scrollTop;
+  const pageScroll = window.scrollY;
   const step = STEPS[App.step - 1];
   $('#step-label').textContent = `STEP ${step.n} / 4`;
   $('#step-title').textContent = step.title;
@@ -204,8 +207,9 @@ function render() {
 
   const view = $('#view');
   view.innerHTML = '';
-  view.scrollTop = 0;
   ({ 1: renderDevice, 2: renderCapture, 3: renderOwner, 4: renderSubmit })[App.step](view);
+  view.scrollTop = resetScroll ? 0 : scroll;
+  window.scrollTo(0, resetScroll ? 0 : pageScroll);
 }
 
 /* ── STEP 1 · 기기 등록 ── */
@@ -407,10 +411,22 @@ function markerGuideSvg(plane) {
     floor: '<path d="M20 122L95 72l105 50-75 38z" fill="#E7EFF9" stroke="#17385C" stroke-width="4"/>'
       + markerAt(105, 105, 0.85),
   };
-  return `<svg viewBox="0 0 220 165" role="img" aria-label="${PLANE_NAME[plane] || '마커 배치'} 예시">`
-    + `${scenes[plane] || scenes.display}<circle cx="188" cy="28" r="16" fill="#F2B705"/>`
-    + '<path d="M181 28l5 5 10-12" fill="none" stroke="#0E2439" stroke-width="4" stroke-linecap="round"/>'
-    + '</svg>';
+  const labels = {
+    display: ['화면 옆의 같은 평면', '화면 글자·버튼은 가리지 않기'],
+    control_panel: ['조작 버튼 바로 옆', '버튼이 놓인 면과 나란하게'],
+    dispenser: ['배출구 바로 옆', '배출구를 가리지 않고 같은 면에'],
+    elevation: ['바닥부터 기기까지 함께 촬영', '카드 하단은 바닥 · 카드는 수직'],
+    floor: ['측정할 바닥에 평평하게', '카드를 세우지 말고 통로와 함께'],
+  };
+  const captions = labels[plane] || labels.display;
+  return `<svg viewBox="0 0 360 265" role="img" aria-label="${captions.join('. ')}. 검은 사각형은 마커 카드 한 장의 위치 예시입니다.">`
+    + '<rect width="360" height="265" rx="12" fill="#F0F5FA"/>'
+    + `<g transform="translate(70 10)">${scenes[plane] || scenes.display}</g>`
+    + '<path d="M315 95L238 95" stroke="#AF410B" stroke-width="3"/>'
+    + '<path d="M247 89L238 95L247 101" fill="none" stroke="#AF410B" stroke-width="3"/>'
+    + '<text x="292" y="78" text-anchor="middle" font-size="15" fill="#913608">카드 1장</text>'
+    + `<text x="180" y="202" text-anchor="middle" font-size="18" font-weight="700" fill="#17385C">${captions[0]}</text>`
+    + `<text x="180" y="230" text-anchor="middle" font-size="15" fill="#17385C">${captions[1]}</text></svg>`;
 }
 
 function markerGuide(sh, compact = false) {
@@ -418,7 +434,9 @@ function markerGuide(sh, compact = false) {
   box.appendChild(el('div', { class: 'marker-picture', html: markerGuideSvg(sh.marker_plane) }));
   box.appendChild(el('div', { class: 'marker-copy' },
     el('b', {}, `측정 마커 · ${PLANE_NAME[sh.marker_plane] || sh.marker_plane}`),
+    el('p', {class:'marker-count'}, '한 촬영에는 카드 1장이면 됩니다. 인쇄된 4개를 모두 붙일 필요는 없습니다. 1장을 잘라 사용하고, 나머지는 예비로 보관하세요.'),
     el('p', {}, sh.marker_placement || '측정할 대상과 같은 평면에 마커를 놓으세요.'),
+    el('p', {}, '화면 → 조작부 → 배출구 → 바닥처럼 측정할 면이 바뀌면 카드를 옮깁니다. 대상과 카드가 한 사진에 모두 보여야 합니다. 위 그림은 위치 설명용이며 인쇄용 마커가 아닙니다.'),
     el('small', {}, '검은 사각형 전체가 보이고, 휘거나 빛이 반사되지 않게 촬영하세요.')));
   return box;
 }
@@ -502,12 +520,17 @@ function renderShot(set, sh) {
     class: 'btn small ' + (mine.length ? '' : 'accent'),
     onclick: () => capture(set, sh),
   }, mine.length ? (sh.multiple ? '원본 이미지 더 추가' : '추가 촬영')
-    : (sh.input_mode === 'gallery' ? '원본 이미지 선택'
+    : (sh.id === 'S1-04' || sh.input_mode === 'gallery' ? '원본 이미지 여러 개 선택'
     : set.medium === 'video' ? '영상 촬영'
     : set.medium === 'audio' ? '녹음' : set.medium === 'document' ? '파일 선택' : '촬영'));
 
   box.appendChild(body);
-  box.appendChild(el('div', {}, btn));
+  const actions = el('div', { class: 'shot-actions' }, btn);
+  if (sh.id !== 'S1-04' && sh.input_mode !== 'gallery') {
+    actions.appendChild(el('button', {class:'btn small', type:'button',
+      onclick: () => chooseCaptureInput(set, sh, true)}, '파일 여러 개 추가'));
+  }
+  box.appendChild(actions);
   return box;
 }
 
@@ -750,7 +773,7 @@ function go(step) {
     const bad = retakeRecommendations();
     if (bad.length) toast(`재촬영 권장 자료 ${bad.length}개가 있습니다. 제출 전에 빨간 표시를 확인하세요.`, 7000);
   }
-  App.step = step; saveState(); render();
+  App.step = step; saveState(); render(true);
 }
 
 async function resetAll() {
@@ -765,6 +788,10 @@ async function resetAll() {
 /* ─────────────────────────── 촬영 ─────────────────────────── */
 
 function capture(set, sh) {
+  if (sh.id === 'S1-04' || sh.input_mode === 'gallery') {
+    chooseCaptureInput(set, sh, true);
+    return;
+  }
   if (sh.marker_required) {
     openMarkerGuide(set, sh);
     return;
@@ -790,19 +817,26 @@ function openMarkerGuide(set, sh) {
   dialog.querySelector('.btn.accent').focus();
 }
 
-function chooseCaptureInput(set, sh) {
-  const input = sh.input_mode === 'gallery' ? $('#capture-gallery')
+function chooseCaptureInput(set, sh, fromFiles = false) {
+  const filesOnly = fromFiles || sh.id === 'S1-04' || sh.input_mode === 'gallery';
+  const input = filesOnly ? $('#capture-gallery')
     : set.medium === 'video' ? $('#capture-video')
     : set.medium === 'audio' ? $('#capture-audio')
     : set.medium === 'document' ? $('#capture-any')
     : $('#capture-input');
 
   App.pending = { set, sh, queue: [] };
+  if (filesOnly) {
+    input.removeAttribute('capture');
+    input.multiple = true;
+    input.accept = set.medium === 'video' ? 'video/*' : set.medium === 'audio'
+      ? 'audio/*,video/*' : set.medium === 'document' ? '' : 'image/*';
+  }
   input.value = '';
   input.onchange = async () => {
     const files = [...(input.files || [])];
     if (!files.length) { App.pending = null; return; }
-    App.pending.queue = sh.multiple ? files : files.slice(0, 1);
+    App.pending.queue = files;
     App.pending.total = App.pending.queue.length;
     await nextPendingFile();
   };
@@ -816,7 +850,7 @@ async function nextPendingFile() {
     const total = App.pending.total || 1;
     App.pending = null;
     render();
-    toast(total > 1 ? `원본 이미지 ${total}장을 추가했습니다.` : '촬영 자료를 저장했습니다.');
+    toast(total > 1 ? `자료 ${total}개를 추가했습니다.` : '촬영 자료를 저장했습니다.');
     return;
   }
   App.pending.current = file;
